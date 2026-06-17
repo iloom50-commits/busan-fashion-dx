@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 부산 패션 소공인 DX 진단 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; }
+        body { background-color: #f0f2f5; color: #1f2937; min-height: 100vh; display: flex; flex-direction: column; }
+
+        header { background: #1e3a5f; color: white; padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 20; }
+
+        #progress-bar-container { background: white; padding: 1rem 0; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 10; }
+        .stepper-item { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+        .stepper-item::before { content: ''; position: absolute; top: 12px; left: -50%; width: 100%; height: 2px; background: #e5e7eb; z-index: -1; }
+        .stepper-item:first-child::before { display: none; }
+        .stepper-circle { width: 24px; height: 24px; border-radius: 50%; background: #e5e7eb; color: #9ca3af; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; z-index: 1; transition: all 0.3s; }
+        .stepper-label { font-size: 11px; margin-top: 4px; color: #9ca3af; font-weight: 500; white-space: nowrap; }
+        .stepper-item.active .stepper-circle { background: #2563eb; color: white; box-shadow: 0 0 0 3px #dbeafe; }
+        .stepper-item.active .stepper-label { color: #2563eb; font-weight: 700; }
+        .stepper-item.completed .stepper-circle { background: #10b981; color: white; }
+        .stepper-item.completed .stepper-label { color: #10b981; }
+        .stepper-item.completed::before { background: #10b981; }
+
+        main { flex: 1; display: flex; justify-content: center; padding: 2rem; }
+        #main-card { background: white; width: 100%; max-width: 800px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; min-height: 500px; border: 1px solid #e5e7eb; }
+
+        .question-header { background: #f8fafc; padding: 2rem; border-bottom: 1px solid #f1f5f9; text-align: center; }
+        .option-list { padding: 2rem; display: flex; flex-direction: column; gap: 0.75rem; }
+        .option-card { display: flex; align-items: center; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .option-card:hover { border-color: #3b82f6; background: #f0f9ff; }
+        .option-card.selected { border-color: #2563eb; background: #eff6ff; box-shadow: 0 0 0 2px #2563eb inset; }
+        .opt-num { width: 28px; height: 28px; border-radius: 6px; background: #f1f5f9; color: #64748b; font-weight: bold; font-size: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem; flex-shrink: 0; }
+        .option-card.selected .opt-num { background: #2563eb; color: white; }
+
+        /* 카드형 선택버튼 (기업정보) */
+        .seg-card { border: 2px solid #e2e8f0; border-radius: 10px; padding: 0.75rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+        .seg-card:hover { border-color: #93c5fd; background: #f0f9ff; }
+        .seg-card.selected { border-color: #2563eb; background: #eff6ff; }
+        .seg-icon { font-size: 1.4rem; margin-bottom: 0.25rem; }
+        .seg-label { font-size: 0.78rem; font-weight: 700; color: #374151; }
+        .seg-sub { font-size: 0.7rem; color: #9ca3af; margin-top: 2px; }
+        .seg-card.selected .seg-label { color: #1d4ed8; }
+
+        /* 랜딩 모드 카드 */
+        .mode-card { border: 2px solid #e2e8f0; border-radius: 16px; padding: 2rem; cursor: pointer; transition: all 0.3s; }
+        .mode-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.1); }
+        .mode-card.self:hover { border-color: #3b82f6; }
+        .mode-card.expert:hover { border-color: #16a34a; }
+
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+        @media print {
+            body { background: white; display: block; }
+            header, #progress-bar-container, #main-card, .no-print { display: none !important; }
+            #print-area { display: block !important; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="flex items-center space-x-2">
+        <span class="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-xs font-bold">DX</span>
+        <span class="font-bold text-lg tracking-tight">부산 패션 소공인 진단 시스템</span>
+    </div>
+    <div class="flex items-center gap-2 text-sm">
+        <span id="header-company" class="font-bold text-white hidden"></span>
+        <span id="header-mode" class="px-2 py-0.5 rounded text-xs font-bold hidden"></span>
+        <span id="header-track" class="bg-blue-600 px-2 py-0.5 rounded text-xs hidden"></span>
+    </div>
+</header>
+
+<div id="progress-bar-container" class="hidden">
+    <div class="max-w-3xl mx-auto flex justify-between w-full px-4" id="stepper-row"></div>
+</div>
+
+<main>
+    <div id="main-card">
+        <div id="wizard-content" class="fade-in w-full flex-1"></div>
+    </div>
+
+    <!-- 인쇄 영역 -->
+    <div id="print-area" class="hidden w-full max-w-4xl mx-auto p-10">
+        <div class="text-center border-b-2 border-gray-800 pb-6 mb-6">
+            <p id="rpt-type-label" class="text-xs text-gray-500 mb-1 uppercase tracking-widest"></p>
+            <h1 id="rpt-title" class="text-3xl font-bold text-[#1e3a5f]">DX 역량 진단 결과보고서</h1>
+            <p class="text-gray-400 text-sm mt-2">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</p>
+        </div>
+        <table class="w-full mb-6 border-t-2 border-gray-800 text-sm">
+            <tbody id="rpt-info"></tbody>
+        </table>
+        <div class="flex justify-between h-60 mb-6">
+            <div class="w-[49%] border p-4"><h3 class="font-bold text-center text-sm mb-2">역량 균형도</h3><div class="h-48 flex justify-center"><canvas id="rpt-radar"></canvas></div></div>
+            <div class="w-[49%] border p-4"><h3 class="font-bold text-center text-sm mb-2">세부 점수</h3><div class="h-48 flex justify-center"><canvas id="rpt-bar"></canvas></div></div>
+        </div>
+        <div class="bg-gray-50 p-5 rounded border mb-6">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="bg-blue-900 text-white px-2 py-0.5 text-xs font-bold rounded">종합 등급</span>
+                <span id="rpt-grade" class="font-bold text-blue-900"></span>
+            </div>
+            <p id="rpt-comment" class="text-sm text-gray-700 leading-relaxed border-t pt-3 mt-2"></p>
+        </div>
+        <div class="page-break">
+            <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-red-500 pl-3 mb-4">맞춤형 기술 수요 (RFP)</h3>
+            <div id="rpt-rfp" class="space-y-3"></div>
+        </div>
+        <div id="rpt-next-section" class="mt-8 hidden">
+            <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-green-500 pl-3 mb-4">다음 단계: 전문가 컨설팅 연계</h3>
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
+                <p class="font-bold text-green-800 mb-2">자가진단 결과를 바탕으로 전문가 컨설팅을 받으시면 더 정확한 진단과 맞춤형 지원을 받을 수 있습니다.</p>
+                <p class="text-green-700">📞 부산테크노파크 패션DX지원센터 문의</p>
+                <p class="text-xs text-green-500 mt-2">※ 이 보고서는 자가진단 결과이며, 전문가 검토를 거치지 않은 참고 자료입니다.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+// ===== DATA =====
+const DATA = {
+    tracks: {
+        A: { icon: '🎨', title: '외주형 브랜드', desc: '디자인 중심 / 생산 외주' },
+        B: { icon: '🏭', title: '전문 제조사', desc: '임가공 / 봉제 공장' },
+        C: { icon: '🏢', title: '통합 운영형', desc: '자체 브랜드 + 제조' }
+    },
+    areas: [
+        { id: 'work', name: '작업지시', icon: '📋' },
+        { id: 'process', name: '공정관리', icon: '⚙️' },
+        { id: 'quality', name: '품질관리', icon: '✅' },
+        { id: 'material', name: '자재관리', icon: '📦' },
+        { id: 'basic', name: '기초역량', icon: '📊' },
+        { id: 'leader', name: 'DX 리더십', icon: '👑' }
+    ],
+    questions: {
+        work:     { A: '외주처 발주서 전달 방식',    B: '현장 작업지시서 전달 방식',  C: '통합 발주/작업지시 방식' },
+        process:  { A: '외주 생산 진도 파악',        B: '내부 공정 진행 확인',        C: '전사 생산 일정 관리' },
+        quality:  { A: '납품 불량 기록 방식',        B: '생산 불량 기록 방식',        C: '전사 품질 데이터 관리' },
+        material: { A: '샘플/원단 재고 관리',        B: '원부자재 수불 관리',         C: '통합 재고 관리' },
+        basic:    { A: '판매 전략 데이터 활용',      B: '생산 계획 데이터 활용',      C: '전사 의사결정 방식' },
+        leader:   { A: '대표자 의지 및 관심도',      B: '대표자 의지 및 관심도',      C: '대표자 의지 및 관심도' }
+    },
+    options: [
+        { val: 1, text: '구두/전화 위주 (기록 없음)' },
+        { val: 2, text: '수기 장부/화이트보드' },
+        { val: 3, text: '엑셀(Excel) 및 메신저 공유' },
+        { val: 4, text: '클라우드/협업툴 실시간 공유' },
+        { val: 5, text: 'ERP/MES 시스템 연동' }
+    ],
+    leaderOpts: [
+        { val: 1, text: '관심 없음' },
+        { val: 2, text: '필요성은 느끼나 계획 없음' },
+        { val: 3, text: '관심 있음 (교육 참석)' },
+        { val: 4, text: '적극적 의지 (예산 배정)' },
+        { val: 5, text: '강력한 의지 (직접 주도)' }
+    ],
+    rfp: {
+        work: '디지털 작업지시서 도입', process: '모바일 공정관리 시스템',
+        quality: '품질 이력 추적 시스템', material: '바코드 재고관리 도입',
+        basic: '데이터 기초 컨설팅', leader: 'CEO DX 역량 교육'
+    },
+    autoComments: {
+        5: '귀사는 디지털 전환의 선도적 위치에 있습니다. ERP/MES 등 디지털 시스템을 적극 활용하고 있으며, 데이터 기반 의사결정 문화가 정착되어 있습니다. 향후 AI·빅데이터 연계 등 고도화 방향을 검토해보시기 바랍니다.',
+        4: '귀사는 디지털 도구를 적극 활용하는 고도화 단계입니다. 클라우드 기반 협업과 데이터 관리가 이루어지고 있으며, 일부 영역에서 추가 디지털화를 진행하면 선도 기업으로 도약이 가능합니다.',
+        3: '귀사는 디지털 전환이 부분적으로 진행 중인 정착 단계입니다. 엑셀·메신저 등 기초 디지털 도구는 활용하고 있으나, 체계적인 시스템 도입을 통해 업무 효율을 크게 높일 수 있습니다. 전문가 컨설팅을 통한 단계적 도입을 권장합니다.',
+        2: '귀사는 디지털 전환 도입 초기 단계입니다. 현재 수기·구두 방식의 업무 비중이 높아 디지털화를 통한 생산성 향상 여지가 큽니다. 간단한 스마트폰 앱·클라우드 도구부터 시작하는 것을 권장합니다.',
+        1: '귀사는 디지털 전환을 시작하는 단계입니다. 기초적인 디지털 환경 구축이 우선 과제입니다. 부산테크노파크의 DX 지원사업을 통해 단계적인 디지털화 지원을 받으시기 바랍니다.'
+    }
+};
+
+// ===== 스텝퍼 설정 =====
+const STEPPER_SELF   = ['self-info', 0, 3, 4, 5, 6, 7, 8, 'result'];
+const STEPPER_EXPERT = [0, 1, 2, 3, 4, 5, 6, 7, 8, 'result'];
+const STEPPER_LABELS_SELF   = ['기업정보','유형선택','작업지시','공정관리','품질관리','자재관리','기초역량','DX리더십','결과'];
+const STEPPER_LABELS_EXPERT = ['Track','기본정보','현장사진','작업지시','공정관리','품질관리','자재관리','기초역량','DX리더십','결과'];
+
+// ===== 상태 =====
+let state = { mode: null, step: 'landing', track: null, scores: {}, info: {}, photos: {}, grade: null };
+let chartInstances = {};
+
+// ===== 스텝퍼 =====
+function updateStepper() {
+    const bar = document.getElementById('progress-bar-container');
+    const row = document.getElementById('stepper-row');
+    if (!state.mode) { bar.classList.add('hidden'); return; }
+    bar.classList.remove('hidden');
+
+    const steps  = state.mode === 'self' ? STEPPER_SELF : STEPPER_EXPERT;
+    const labels = state.mode === 'self' ? STEPPER_LABELS_SELF : STEPPER_LABELS_EXPERT;
+    const cur    = steps.indexOf(state.step);
+
+    row.innerHTML = steps.map((_, i) => `
+        <div class="stepper-item ${i < cur ? 'completed' : i === cur ? 'active' : ''}">
+            <div class="stepper-circle">${i < cur ? '✓' : i + 1}</div>
+            <div class="stepper-label">${labels[i]}</div>
+        </div>
+    `).join('');
+}
+
+// ===== 렌더 =====
+function render() {
+    updateStepper();
+    const el = document.getElementById('wizard-content');
+    el.className = 'fade-in w-full flex-1';
+    void el.offsetWidth; // 애니메이션 리셋
+
+    if      (state.step === 'landing')   renderLanding(el);
+    else if (state.step === 'self-info') renderSelfInfo(el);
+    else if (state.step === 0)           renderTrack(el);
+    else if (state.step === 1)           renderInfo(el);
+    else if (state.step === 2)           renderPhoto(el);
+    else if (state.step >= 3)            renderDiagnosis(el);
+    else if (state.step === 'result')    renderResult(el);
+}
+
+// ===== 각 화면 =====
+
+function renderLanding(el) {
+    el.innerHTML = `
+        <div class="p-8 md:p-10">
+            <div class="text-center mb-10">
+                <span class="inline-block bg-blue-50 text-blue-700 text-xs font-bold px-4 py-1.5 rounded-full mb-4">
+                    2026 부산 패션(봉제) 소공인 디지털 전환 역량진단
+                </span>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">DX 역량 진단 시스템</h1>
+                <p class="text-gray-400 text-sm">아래에서 진단 방식을 선택해주세요</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                <div onclick="startMode('self')" class="mode-card self">
+                    <div class="text-5xl text-center mb-4">🏢</div>
+                    <h2 class="text-xl font-bold text-center text-gray-900 mb-1">기업 자가진단</h2>
+                    <p class="text-xs text-gray-400 text-center mb-5">기업 담당자·대표자가 직접 진단</p>
+                    <ul class="text-xs text-gray-600 space-y-2 mb-6">
+                        <li class="flex items-start gap-2"><span class="text-blue-500 font-bold">✓</span>기업 정보 직접 입력 (종업원수·생산방식 등)</li>
+                        <li class="flex items-start gap-2"><span class="text-blue-500 font-bold">✓</span>6개 영역 디지털 성숙도 자가평가</li>
+                        <li class="flex items-start gap-2"><span class="text-blue-500 font-bold">✓</span>자가진단 결과보고서 즉시 출력(PDF)</li>
+                        <li class="flex items-start gap-2"><span class="text-blue-500 font-bold">✓</span>전문가 컨설팅 연계 안내 포함</li>
+                    </ul>
+                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm transition-all">
+                        자가진단 시작하기 →
+                    </button>
+                </div>
+
+                <div onclick="startMode('expert')" class="mode-card expert">
+                    <div class="text-5xl text-center mb-4">👨‍💼</div>
+                    <h2 class="text-xl font-bold text-center text-gray-900 mb-1">전문가 진단</h2>
+                    <p class="text-xs text-gray-400 text-center mb-5">전문 컨설턴트가 현장 방문 후 사용</p>
+                    <ul class="text-xs text-gray-600 space-y-2 mb-6">
+                        <li class="flex items-start gap-2"><span class="text-green-500 font-bold">✓</span>현장 사진 첨부 기능 포함</li>
+                        <li class="flex items-start gap-2"><span class="text-green-500 font-bold">✓</span>6개 영역 전문가 평가 입력</li>
+                        <li class="flex items-start gap-2"><span class="text-green-500 font-bold">✓</span>전문가 의견 직접 작성</li>
+                        <li class="flex items-start gap-2"><span class="text-green-500 font-bold">✓</span>기업별 공식 진단 리포트 발행</li>
+                    </ul>
+                    <button class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold text-sm transition-all">
+                        전문가 진단 시작하기 →
+                    </button>
+                </div>
+            </div>
+
+            <p class="text-center text-xs text-gray-300 mt-10">재단법인 부산테크노파크 · 2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단</p>
+        </div>
+    `;
+}
+
+function renderSelfInfo(el) {
+    const i = state.info;
+    const segBtn = (key, val, icon, label, sub='') => {
+        const sel = i[key] === val ? 'selected' : '';
+        return `<div onclick="selectInfo('${key}','${val.replace(/'/g,'\\\'')}')" class="seg-card ${sel}">
+            <div class="seg-icon">${icon}</div>
+            <div class="seg-label">${label}</div>
+            ${sub ? `<div class="seg-sub">${sub}</div>` : ''}
+        </div>`;
+    };
+
+    el.innerHTML = `
+        <div class="question-header">
+            <h2 class="text-xl font-bold">기업 정보 입력</h2>
+            <p class="text-sm text-gray-400 mt-1">정확한 진단을 위해 기업 현황을 입력해주세요</p>
+        </div>
+
+        <div class="p-6 space-y-6 overflow-y-auto" style="max-height:calc(100vh - 260px)">
+
+            <!-- 기본 정보 -->
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">기본 정보</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">기업명 <span class="text-red-500">*</span></label>
+                        <input id="si-comp" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="예) (주)부산봉제" value="${i.comp||''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">대표자명 <span class="text-red-500">*</span></label>
+                        <input id="si-ceo" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="홍길동" value="${i.ceo||''}">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">연락처</label>
+                        <input id="si-tel" type="tel" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="010-0000-0000" value="${i.tel||''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">사업자번호</label>
+                        <input id="si-biz" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="000-00-00000" value="${i.biz||''}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 종업원 수 -->
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                    종업원 수 <span class="text-red-500">*</span>
+                </p>
+                <div class="grid grid-cols-4 gap-2">
+                    ${segBtn('emp','1~4명','👤','1~4명')}
+                    ${segBtn('emp','5~9명','👥','5~9명')}
+                    ${segBtn('emp','10~19명','🏘️','10~19명')}
+                    ${segBtn('emp','20명 이상','🏢','20명 이상')}
+                </div>
+            </div>
+
+            <!-- 생산 방식 -->
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                    현재 설비·생산 방식 <span class="text-red-500">*</span>
+                </p>
+                <div class="grid grid-cols-3 gap-3">
+                    ${segBtn('prod','수작업 위주','✂️','수작업 위주','재봉사 인력 중심')}
+                    ${segBtn('prod','반자동화','🪡','반자동화','재봉틀+일부 기계')}
+                    ${segBtn('prod','자동화 설비','⚙️','자동화 설비','전용 설비 다수')}
+                </div>
+            </div>
+
+            <!-- 주요 매출 형태 -->
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                    주요 매출 형태 <span class="text-red-500">*</span>
+                </p>
+                <div class="grid grid-cols-3 gap-3">
+                    ${segBtn('biz_type','임가공(수주)','📦','임가공(수주)','타사 발주 임가공')}
+                    ${segBtn('biz_type','자체 브랜드','🎨','자체 브랜드','기획·제조·판매')}
+                    ${segBtn('biz_type','복합 운영','🔀','복합 운영','임가공+브랜드')}
+                </div>
+            </div>
+
+        </div>
+
+        <div class="px-6 py-4 border-t flex justify-between items-center">
+            <button onclick="goLanding()" class="text-sm text-gray-400 hover:text-gray-600">← 처음으로</button>
+            <button onclick="saveSelfInfo()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl font-bold text-sm transition-all">
+                다음: 기업 유형 선택 →
+            </button>
+        </div>
+    `;
+}
+
+function renderTrack(el) {
+    const bizType = state.info.biz_type;
+    const suggested = bizType === '임가공(수주)' ? 'B' : bizType === '자체 브랜드' ? 'A' : bizType === '복합 운영' ? 'C' : null;
+
+    el.innerHTML = `
+        <div class="question-header">
+            <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2">기업 유형 선택</div>
+            <h2 class="text-2xl font-bold text-gray-800">기업 유형을 선택해주세요</h2>
+            <p class="text-gray-400 text-sm mt-1">유형에 따라 진단 문항이 맞춤 설정됩니다</p>
+            ${suggested && state.mode === 'self' ? `
+                <div class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-bold mt-3">
+                    💡 입력하신 매출 형태 기준으로 Track ${suggested} 권장
+                </div>` : ''}
+        </div>
+        <div class="p-8 grid grid-cols-3 gap-4">
+            ${Object.keys(DATA.tracks).map(k => {
+                const isRecommended = k === suggested && state.mode === 'self';
+                return `
+                <div onclick="setTrack('${k}')" class="relative border-2 ${isRecommended ? 'border-blue-300 bg-blue-50' : 'border-gray-200'} rounded-xl p-6 text-center cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all group">
+                    ${isRecommended ? '<span class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">권장</span>' : ''}
+                    <div class="text-4xl mb-3">${DATA.tracks[k].icon}</div>
+                    <h3 class="font-bold text-blue-700 text-sm">Track ${k}</h3>
+                    <h4 class="font-bold text-gray-800 mt-1">${DATA.tracks[k].title}</h4>
+                    <p class="text-xs text-gray-500 mt-2">${DATA.tracks[k].desc}</p>
+                    <div class="mt-5 text-xs text-blue-600 font-bold opacity-0 group-hover:opacity-100">선택하기 →</div>
+                </div>`;
+            }).join('')}
+        </div>
+        <div class="px-8 pb-4">
+            <button onclick="prev()" class="text-gray-400 text-sm">← 뒤로가기</button>
+        </div>
+    `;
+}
+
+function renderInfo(el) {
+    const i = state.info;
+    el.innerHTML = `
+        <div class="question-header">
+            <h2 class="text-xl font-bold">기본 정보 입력</h2>
+            <p class="text-sm text-gray-400 mt-1">전문가 진단 대상 기업 정보</p>
+        </div>
+        <div class="p-8 space-y-4 max-w-lg mx-auto">
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">기업명 <span class="text-red-500">*</span></label>
+                <input id="inp-comp" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.comp||''}" placeholder="예) (주)부산봉제">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">대표자</label>
+                <input id="inp-ceo" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.ceo||''}">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">사업자번호</label>
+                <input id="inp-biz" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.biz||''}">
+            </div>
+            <div class="pt-4 flex justify-between">
+                <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
+                <button onclick="saveInfo()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">다음 →</button>
+            </div>
+        </div>
+    `;
+}
+
+function renderPhoto(el) {
+    el.innerHTML = `
+        <div class="question-header">
+            <h2 class="text-xl font-bold">현장 사진 기록</h2>
+            <button onclick="next()" class="text-xs text-blue-500 underline mt-2 block mx-auto">건너뛰기</button>
+        </div>
+        <div class="p-8 grid grid-cols-2 gap-4">
+            ${[1,2].map(n => `
+                <div onclick="document.getElementById('f${n}').click()"
+                    class="border-2 border-dashed rounded-xl h-48 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 relative">
+                    <input type="file" id="f${n}" class="hidden" accept="image/*" onchange="loadPhoto(this,${n})">
+                    <div id="ph-lbl-${n}" class="text-center">
+                        <div class="text-3xl mb-2">📷</div>
+                        <span class="text-sm font-bold text-gray-400">${n===1?'현장 전경':'주요 애로사항'}</span>
+                    </div>
+                    <img id="ph-img-${n}" class="absolute inset-0 w-full h-full object-cover hidden rounded-xl">
+                </div>
+            `).join('')}
+        </div>
+        <div class="px-8 pb-8 flex justify-between">
+            <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
+            <button onclick="next()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">다음 →</button>
+        </div>
+    `;
+}
+
+function renderDiagnosis(el) {
+    const areaIdx = state.step - 3;
+    const area = DATA.areas[areaIdx];
+    const opts = area.id === 'leader' ? DATA.leaderOpts : DATA.options;
+    const cur  = state.scores[area.id];
+
+    el.innerHTML = `
+        <div class="question-header">
+            <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2">${area.icon} ${area.name} (${areaIdx+1}/6)</div>
+            <h2 class="text-xl font-bold text-gray-800">${DATA.questions[area.id][state.track]}</h2>
+            ${state.mode === 'self' ? '<p class="text-xs text-gray-400 mt-2">귀사의 현재 상황에 가장 가까운 항목을 선택해주세요</p>' : ''}
+        </div>
+        <div class="option-list">
+            ${opts.map(o => `
+                <div onclick="setScore('${area.id}',${o.val})" class="option-card ${cur===o.val?'selected':''}">
+                    <div class="opt-num">${o.val}</div>
+                    <div class="font-medium text-gray-700 text-sm">${o.text}</div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="px-8 pb-4">
+            <button onclick="prev()" class="text-gray-400 text-sm">← 뒤로가기</button>
+        </div>
+    `;
+}
+
+function renderResult(el) {
+    const sum = Object.values(state.scores).reduce((a,b)=>a+b,0);
+    const lv  = sum>=25?5 : sum>=20?4 : sum>=15?3 : sum>=10?2 : 1;
+    const gradeMap = { 5:'LV5. 선도', 4:'LV4. 고도화', 3:'LV3. 정착', 2:'LV2. 도입', 1:'LV1. 기초' };
+    const colorMap = { 5:'#2563eb', 4:'#16a34a', 3:'#ca8a04', 2:'#ea580c', 1:'#dc2626' };
+    state.grade = { lv, txt: gradeMap[lv], color: colorMap[lv] };
+
+    const isSelf = state.mode === 'self';
+
+    el.innerHTML = `
+        <div class="p-8 flex flex-col h-full">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">진단 완료</h2>
+                <div class="flex items-center justify-center gap-2 mt-2">
+                    <span class="font-bold text-lg" style="color:${colorMap[lv]}">${gradeMap[lv]}</span>
+                    <span class="text-gray-400 text-sm">${sum} / 30점</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-5">
+                <div class="border rounded-lg p-3"><canvas id="dash-radar" height="190"></canvas></div>
+                <div class="border rounded-lg p-3"><canvas id="dash-bar" height="190"></canvas></div>
+            </div>
+
+            ${isSelf ? `
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
+                    <p class="text-xs font-bold text-blue-500 mb-1">📋 자동 진단 의견</p>
+                    <p class="text-sm text-blue-800 leading-relaxed">${DATA.autoComments[lv]}</p>
+                </div>
+                <button onclick="printSelfReport()" class="bg-blue-600 hover:bg-blue-700 text-white w-full py-3 rounded-lg font-bold shadow transition-all">
+                    📄 자가진단 결과보고서 출력 (PDF)
+                </button>
+            ` : `
+                <div class="bg-gray-50 rounded-lg p-4 flex-1 flex flex-col">
+                    <p class="text-xs font-bold text-gray-500 mb-2">📢 전문가 의견 작성 (필수)</p>
+                    <textarea id="inp-comment" class="flex-1 border rounded p-3 text-sm resize-none focus:ring-2 focus:ring-blue-400 outline-none bg-white" style="min-height:90px" placeholder="여기에 작성한 내용이 보고서에 출력됩니다."></textarea>
+                    <button onclick="printExpertReport()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white w-full py-3 rounded-lg font-bold shadow transition-all">
+                        📄 최종 리포트 발행
+                    </button>
+                </div>
+            `}
+        </div>
+    `;
+    setTimeout(() => drawCharts('dash'), 100);
+}
+
+// ===== 액션 =====
+
+function startMode(mode) {
+    state.mode = mode;
+    const modeEl = document.getElementById('header-mode');
+    modeEl.innerText   = mode === 'self' ? '자가진단' : '전문가 진단';
+    modeEl.className   = `px-2 py-0.5 rounded text-xs font-bold ${mode==='self'?'bg-blue-600':'bg-green-600'}`;
+    modeEl.classList.remove('hidden');
+    state.step = mode === 'self' ? 'self-info' : 0;
+    render();
+}
+
+function goLanding() {
+    state = { mode: null, step: 'landing', track: null, scores: {}, info: {}, photos: {}, grade: null };
+    ['header-company','header-mode','header-track'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    render();
+}
+
+function selectInfo(key, val) {
+    // 텍스트 입력값 보존
+    ['si-comp','si-ceo','si-tel','si-biz'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) state.info[id.replace('si-','')] = el.value;
+    });
+    state.info[key] = val;
+    renderSelfInfo(document.getElementById('wizard-content'));
+}
+
+function saveSelfInfo() {
+    const comp = document.getElementById('si-comp').value.trim();
+    const ceo  = document.getElementById('si-ceo').value.trim();
+    if (!comp) { alert('기업명을 입력해주세요.'); return; }
+    if (!ceo)  { alert('대표자명을 입력해주세요.'); return; }
+    if (!state.info.emp)      { alert('종업원 수를 선택해주세요.'); return; }
+    if (!state.info.prod)     { alert('설비·생산 방식을 선택해주세요.'); return; }
+    if (!state.info.biz_type) { alert('주요 매출 형태를 선택해주세요.'); return; }
+
+    state.info.comp = comp;
+    state.info.ceo  = ceo;
+    state.info.tel  = document.getElementById('si-tel').value.trim();
+    state.info.biz  = document.getElementById('si-biz').value.trim();
+
+    const hc = document.getElementById('header-company');
+    hc.innerText = comp;
+    hc.classList.remove('hidden');
+    next();
+}
+
+function setTrack(t) {
+    state.track = t;
+    const ht = document.getElementById('header-track');
+    ht.innerText = `Track ${t}`;
+    ht.classList.remove('hidden');
+    next();
+}
+
+function saveInfo() {
+    const comp = document.getElementById('inp-comp').value.trim();
+    if (!comp) { alert('기업명은 필수입니다.'); return; }
+    state.info.comp = comp;
+    state.info.ceo  = document.getElementById('inp-ceo').value.trim();
+    state.info.biz  = document.getElementById('inp-biz').value.trim();
+    const hc = document.getElementById('header-company');
+    hc.innerText = comp;
+    hc.classList.remove('hidden');
+    next();
+}
+
+function loadPhoto(inp, n) {
+    if (!inp.files[0]) return;
+    const r = new FileReader();
+    r.onload = e => {
+        document.getElementById(`ph-img-${n}`).src = e.target.result;
+        document.getElementById(`ph-img-${n}`).classList.remove('hidden');
+        document.getElementById(`ph-lbl-${n}`).classList.add('hidden');
+        state.photos[`p${n}`] = e.target.result;
+    };
+    r.readAsDataURL(inp.files[0]);
+}
+
+function setScore(id, val) {
+    state.scores[id] = val;
+    next();
+}
+
+function next() {
+    if (state.step === 'result') return;
+    if (state.mode === 'self') {
+        if      (state.step === 'self-info') state.step = 0;
+        else if (state.step === 0)           state.step = 3;
+        else if (state.step === 8)           state.step = 'result';
+        else                                 state.step++;
+    } else {
+        if      (state.step === 8) state.step = 'result';
+        else                       state.step++;
+    }
+    render();
+}
+
+function prev() {
+    if (state.mode === 'self') {
+        if      (state.step === 'self-info') { goLanding(); return; }
+        else if (state.step === 0)           state.step = 'self-info';
+        else if (state.step === 3)           state.step = 0;
+        else if (state.step === 'result')    state.step = 8;
+        else                                 state.step--;
+    } else {
+        if      (state.step === 0)        { goLanding(); return; }
+        else if (state.step === 'result') state.step = 8;
+        else                              state.step--;
+    }
+    render();
+}
+
+// ===== 차트 =====
+
+function drawCharts(prefix) {
+    const labels = DATA.areas.map(a => a.name);
+    const data   = DATA.areas.map(a => state.scores[a.id] || 0);
+
+    ['radar','bar'].forEach(type => {
+        const key = `${prefix}-${type}`;
+        if (chartInstances[key]) { chartInstances[key].destroy(); delete chartInstances[key]; }
+    });
+
+    chartInstances[`${prefix}-radar`] = new Chart(document.getElementById(`${prefix}-radar`), {
+        type: 'radar',
+        data: { labels, datasets: [{ data, borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.08)', pointBackgroundColor:'#2563eb', pointRadius:3 }] },
+        options: { scales: { r: { min:0, max:5, ticks:{display:false}, grid:{color:'#e5e7eb'} } }, plugins:{legend:false} }
+    });
+
+    const sorted = DATA.areas.map(a=>({name:a.name, s:state.scores[a.id]||0})).sort((a,b)=>a.s-b.s);
+    chartInstances[`${prefix}-bar`] = new Chart(document.getElementById(`${prefix}-bar`), {
+        type: 'bar',
+        data: { labels: sorted.map(d=>d.name), datasets:[{ data: sorted.map(d=>d.s), backgroundColor: sorted.map(d=>d.s<3?'#ef4444':'#3b82f6'), borderRadius:4 }] },
+        options: { indexAxis:'y', scales:{ x:{max:5, grid:{color:'#f1f5f9'}} }, plugins:{legend:false} }
+    });
+}
+
+// ===== 인쇄 =====
+
+function fillReportCommon() {
+    const sum = Object.values(state.scores).reduce((a,b)=>a+b,0);
+    const g   = state.grade;
+    document.getElementById('rpt-grade').innerText = `${g.txt}  (${sum}점 / 30점)`;
+
+    const weak = DATA.areas
+        .map(a => ({ id:a.id, name:a.name, s:state.scores[a.id]||0 }))
+        .sort((a,b)=>a.s-b.s).slice(0,3);
+
+    document.getElementById('rpt-rfp').innerHTML = weak.map(w => `
+        <div class="border rounded-lg p-4 bg-gray-50">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold">${w.name} ${w.s}점</span>
+                <span class="font-bold text-sm text-gray-800">${DATA.rfp[w.id]}</span>
+            </div>
+        </div>
+    `).join('');
+
+    setTimeout(() => { drawCharts('rpt'); window.print(); }, 500);
+}
+
+function printSelfReport() {
+    const i = state.info;
+    document.getElementById('rpt-title').innerText      = 'DX 역량 자가진단 결과보고서';
+    document.getElementById('rpt-type-label').innerText = '기업 자가진단';
+    document.getElementById('rpt-next-section').classList.remove('hidden');
+
+    document.getElementById('rpt-info').innerHTML = `
+        <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold w-24">기업명</th><td class="px-3 text-sm">${i.comp}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold w-24">대표자</th><td class="px-3 text-sm">${i.ceo||'-'}</td></tr>
+        <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">연락처</th><td class="px-3 text-sm">${i.tel||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm">${new Date().toLocaleDateString('ko-KR')}</td></tr>
+        <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">종업원수</th><td class="px-3 text-sm">${i.emp||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">기업유형</th><td class="px-3 text-sm">Track ${state.track} · ${DATA.tracks[state.track].title}</td></tr>
+        <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">생산방식</th><td class="px-3 text-sm">${i.prod||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">매출형태</th><td class="px-3 text-sm">${i.biz_type||'-'}</td></tr>
+    `;
+    document.getElementById('rpt-comment').innerText = DATA.autoComments[state.grade.lv];
+    fillReportCommon();
+}
+
+function printExpertReport() {
+    const comment = document.getElementById('inp-comment').value.trim();
+    if (!comment) { alert('전문가 의견을 입력해주세요.'); return; }
+
+    const i = state.info;
+    document.getElementById('rpt-title').innerText      = 'DX 역량 진단 결과보고서';
+    document.getElementById('rpt-type-label').innerText = '전문가 현장 진단';
+    document.getElementById('rpt-next-section').classList.add('hidden');
+
+    document.getElementById('rpt-info').innerHTML = `
+        <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold w-24">기업명</th><td class="px-3 text-sm">${i.comp}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold w-24">대표자</th><td class="px-3 text-sm">${i.ceo||'-'}</td></tr>
+        <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">사업자번호</th><td class="px-3 text-sm">${i.biz||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm">${new Date().toLocaleDateString('ko-KR')}</td></tr>
+        <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">기업유형</th><td colspan="3" class="px-3 text-sm">Track ${state.track} · ${DATA.tracks[state.track].title}</td></tr>
+    `;
+    document.getElementById('rpt-comment').innerText = comment;
+    fillReportCommon();
+}
+
+// ===== 시작 =====
+render();
+</script>
+</body>
+</html>

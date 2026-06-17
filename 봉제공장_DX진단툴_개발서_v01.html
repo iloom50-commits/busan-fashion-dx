@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>봉제공장 DX 진단 툴 개발서</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Malgun Gothic','Noto Sans KR',sans-serif; }
+  body { background:#525659; color:#1a1a1a; line-height:1.7; font-size:14px; }
+  .page { background:#fff; width:210mm; min-height:297mm; margin:18px auto; padding:22mm 20mm; box-shadow:0 2px 12px rgba(0,0,0,.35); position:relative; }
+  /* 표지 */
+  .cover { display:flex; flex-direction:column; align-items:center; text-align:center; }
+  .cover .emblem { width:78px; height:78px; border-radius:50%; background:#10243e; color:#fff; display:flex; align-items:center; justify-content:center; font-size:27px; font-weight:800; letter-spacing:1px; margin-top:26mm; box-shadow:0 0 0 7px #eaf0f8; }
+  .cover .org { margin-top:12mm; font-size:20px; font-weight:700; letter-spacing:5px; }
+  .cover .proj { margin-top:22mm; font-size:17px; font-weight:600; color:#10243e; }
+  .cover .doc-title { margin-top:26mm; font-size:38px; font-weight:800; letter-spacing:12px; color:#10243e; }
+  .cover .tool { margin-top:14mm; font-size:15px; color:#555; }
+  .cover .date { margin-top:34mm; font-size:17px; font-weight:700; }
+
+  h2.sec { font-size:18px; font-weight:800; color:#10243e; border-bottom:2px solid #10243e; padding-bottom:5px; margin:26px 0 12px; }
+  h2.sec:first-of-type { margin-top:0; }
+  h3.sub { font-size:15px; font-weight:700; margin:16px 0 6px; color:#1d4ed8; }
+  p.tx { margin:6px 0; }
+  .sq { margin:6px 0 6px 4px; padding-left:18px; position:relative; }
+  .sq::before { content:'□'; position:absolute; left:0; color:#10243e; font-size:12px; }
+  .ci { margin:4px 0 4px 24px; padding-left:16px; position:relative; }
+  .ci::before { content:'○'; position:absolute; left:0; color:#2563eb; font-size:12px; }
+
+  table.t { width:100%; border-collapse:collapse; margin:10px 0 14px; font-size:13px; table-layout:fixed; }
+  table.t th, table.t td { border:1px solid #8a93a3; padding:7px 8px; vertical-align:middle; }
+  table.t th { background:#10243e; color:#fff; font-weight:700; text-align:center; }
+  table.t td.c { text-align:center; }
+  table.t td.lab { background:#eef2f7; font-weight:700; text-align:center; }
+  .flow { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:12px 0; }
+  .flow .node { background:#eff6ff; border:1px solid #2563eb; color:#1e3a5f; border-radius:8px; padding:8px 12px; font-weight:700; font-size:13px; }
+  .flow .arr { color:#2563eb; font-weight:800; }
+  .note { font-size:12px; color:#777; margin-top:4px; }
+  .footer { position:absolute; bottom:14mm; left:0; right:0; text-align:center; font-size:12px; color:#888; }
+
+  .shots { display:flex; gap:12px; margin:8px 0; }
+  figure.shot { flex:1; margin:0; border:1px solid #cdd4df; border-radius:6px; padding:8px; background:#fafbfc; }
+  figure.wide { margin:14px 0 0; border:1px solid #cdd4df; border-radius:6px; padding:8px; background:#fafbfc; }
+  figure.shot img, figure.wide img { width:100%; display:block; border:1px solid #e5e7eb; }
+  figcaption { text-align:center; font-size:12px; margin-top:6px; color:#10243e; font-weight:700; }
+
+  .toolbar { position:fixed; top:12px; right:12px; z-index:50; }
+  .toolbar button { background:#2563eb; color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { background:#fff; }
+    .page { margin:0; box-shadow:none; width:210mm; height:297mm; min-height:297mm; padding:13mm 16mm; overflow:hidden; page-break-after:always; page-break-inside:avoid; }
+    .page:last-child { page-break-after:auto; }
+    .toolbar { display:none; }
+    table.t, table.diag { page-break-inside:avoid; }
+    figure.shot img { width:auto; max-width:100%; max-height:96mm; margin:0 auto; }
+    figure.wide img { width:auto; max-width:100%; max-height:135mm; margin:0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar"><button onclick="window.print()">🖨 인쇄 / PDF 저장</button></div>
+
+<!-- ===== 표지 ===== -->
+<div class="page cover">
+  <div class="emblem">DX</div>
+  <div class="org">- 재 단 법 인  부 산 테 크 노 파 크 -</div>
+  <div class="proj">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단</div>
+  <div class="doc-title">DX 진단 툴 개발서</div>
+  <div class="tool">의류제조 봉제공장 DX 진단을 위한 체크리스트 개발 결과물<br>「2026 부산 패션 소공인 DX 진단 시스템 v4.0」</div>
+  <div class="date">2026. 06.</div>
+</div>
+
+<!-- ===== 1. 개요 ===== -->
+<div class="page">
+  <h2 class="sec">Ⅰ. 개발 개요</h2>
+  <div class="sq"><b>개발명</b> : 의류제조 봉제공장 DX 진단을 위한 체크리스트 및 진단 툴 개발</div>
+  <div class="sq"><b>산출물명</b> : 2026 부산 패션 소공인 DX 진단 시스템 v4.0 (웹 기반 진단 프로그램)</div>
+  <div class="sq"><b>개발 목적</b></div>
+  <div class="ci">봉제 소공인의 디지털 성숙도를 객관적·비교 가능한 기준으로 측정할 수 있는 표준 진단 도구 확보</div>
+  <div class="ci">현장 방문진단 시 동일 기준으로 평가하고, 기업별 우선 개선과제를 즉시 도출</div>
+  <div class="ci">진단 결과를 후속 DX 지원사업 설계 및 정책 수립의 근거 데이터로 활용</div>
+  <div class="sq"><b>개발 자문(전문가)</b> : 권오성 기술사(DX 전환) · 김기원 경영지도사(스마트 공장) · 최성욱 경영지도사(경영)</div>
+  <div class="sq"><b>개발 방법</b> : 발주처 및 봉제공장 현장실태 조사 → 봉제공장 특화 문항 설계 → 척도·등급 체계 수립 → 웹 진단 프로그램 구현·검증</div>
+
+  <h2 class="sec">Ⅱ. 개발 범위</h2>
+  <div class="sq">봉제공장 특화 DX 체크리스트(진단 문항) 개발</div>
+  <div class="sq">기업 유형(Track)별 문항 분기 및 5단계 평가 척도 설계</div>
+  <div class="sq">종합 점수·등급(레벨) 산정 로직 및 영역별 개선과제(RFP) 매핑</div>
+  <div class="sq">웹 기반 진단 프로그램 구현(진단 입력 → 결과 시각화 → 리포트 발행)</div>
+  <div class="sq">현장 적용 검증 및 개발서(본 문서) 작성 &mdash; <b>결과물: 봉제공장 DX 진단 툴 개발서 등 1식</b></div>
+
+  <div class="footer">- 1 -</div>
+</div>
+
+<!-- ===== 2. 진단 체계 설계 ===== -->
+<div class="page">
+  <h2 class="sec">Ⅲ. 진단 체계 설계</h2>
+
+  <h3 class="sub">1. 기업 유형(Track) 분류</h3>
+  <p class="tx">기업의 사업 구조에 따라 3개 유형으로 분류하고, 유형별로 진단 문항을 자동 분기한다. 봉제(임가공) 공장은 <b>Track B(전문 제조사)</b>를 기본 적용한다.</p>
+  <table class="t">
+    <tr><th style="width:18%">구분</th><th style="width:30%">유형</th><th>설명</th></tr>
+    <tr><td class="c">Track A</td><td class="c">외주형 브랜드</td><td>디자인 중심 / 생산 외주</td></tr>
+    <tr><td class="c">Track B</td><td class="c">전문 제조사</td><td>임가공 / 봉제 공장 <b>(본 사업 진단 대상)</b></td></tr>
+    <tr><td class="c">Track C</td><td class="c">통합 운영형</td><td>자체 브랜드 + 제조</td></tr>
+  </table>
+
+  <h3 class="sub">2. 6대 진단 영역</h3>
+  <p class="tx">봉제공장의 생산·품질·자재·경영 전반을 포괄하는 6개 핵심 영역으로 구성한다.</p>
+  <table class="t">
+    <tr><th style="width:18%">영역</th><th style="width:42%">진단 관점</th><th>개선과제(RFP) 연계</th></tr>
+    <tr><td class="c">① 작업지시</td><td>작업지시 정보의 전달·기록 방식</td><td>디지털 작업지시서 도입</td></tr>
+    <tr><td class="c">② 공정관리</td><td>생산 진행·진도의 확인 방식</td><td>모바일 공정관리 시스템</td></tr>
+    <tr><td class="c">③ 품질관리</td><td>불량 기록·이력 관리 방식</td><td>품질 이력 추적 시스템</td></tr>
+    <tr><td class="c">④ 자재관리</td><td>원부자재 수불·재고 관리 방식</td><td>바코드 재고관리 도입</td></tr>
+    <tr><td class="c">⑤ 기초역량</td><td>생산계획·데이터 활용 수준</td><td>데이터 기초 컨설팅</td></tr>
+    <tr><td class="c">⑥ DX 리더십</td><td>대표자의 디지털 전환 의지</td><td>CEO DX 역량 교육</td></tr>
+  </table>
+
+  <div class="footer">- 2 -</div>
+</div>
+
+<!-- ===== 3. 문항 ===== -->
+<div class="page">
+  <h3 class="sub">3. 영역별 진단 문항 (Track별)</h3>
+  <p class="tx">동일 영역이라도 기업 유형에 맞는 문항으로 자동 분기하여 측정의 적합성을 높인다.</p>
+  <table class="t">
+    <tr><th style="width:16%">영역</th><th>Track A 외주형 브랜드</th><th>Track B 전문 제조사(봉제)</th><th>Track C 통합 운영형</th></tr>
+    <tr><td class="lab">작업지시</td><td>외주처 발주서 전달 방식</td><td><b>현장 작업지시서 전달 방식</b></td><td>통합 발주/작업지시 방식</td></tr>
+    <tr><td class="lab">공정관리</td><td>외주 생산 진도 파악</td><td><b>내부 공정 진행 확인</b></td><td>전사 생산 일정 관리</td></tr>
+    <tr><td class="lab">품질관리</td><td>납품 불량 기록 방식</td><td><b>생산 불량 기록 방식</b></td><td>전사 품질 데이터 관리</td></tr>
+    <tr><td class="lab">자재관리</td><td>샘플/원단 재고 관리</td><td><b>원부자재 수불 관리</b></td><td>통합 재고 관리</td></tr>
+    <tr><td class="lab">기초역량</td><td>판매 전략 데이터 활용</td><td><b>생산 계획 데이터 활용</b></td><td>전사 의사결정 방식</td></tr>
+    <tr><td class="lab">DX 리더십</td><td colspan="3" class="c">대표자 의지 및 관심도 (공통)</td></tr>
+  </table>
+
+  <h3 class="sub">4. 평가 척도 (5단계)</h3>
+  <p class="tx">각 영역을 디지털화 성숙도에 따라 1~5점으로 평가한다. (DX 리더십은 의지 단계 척도 적용)</p>
+  <table class="t">
+    <tr><th style="width:10%">점수</th><th>일반 영역(작업·공정·품질·자재·기초)</th><th>DX 리더십(대표자 의지)</th></tr>
+    <tr><td class="c">1점</td><td>구두/전화 위주 (기록 없음)</td><td>관심 없음</td></tr>
+    <tr><td class="c">2점</td><td>수기 장부/화이트보드</td><td>필요성은 느끼나 계획 없음</td></tr>
+    <tr><td class="c">3점</td><td>엑셀(Excel) 및 메신저 공유</td><td>관심 있음 (교육 참석)</td></tr>
+    <tr><td class="c">4점</td><td>클라우드/협업툴 실시간 공유</td><td>적극적 의지 (예산 배정)</td></tr>
+    <tr><td class="c">5점</td><td>ERP/MES 시스템 연동</td><td>강력한 의지 (직접 주도)</td></tr>
+  </table>
+
+  <h3 class="sub">5. 종합 등급(레벨) 산정</h3>
+  <p class="tx">6개 영역 합산(30점 만점)으로 4개 등급을 자동 산정한다.</p>
+  <table class="t">
+    <tr><th style="width:25%">종합 점수</th><th style="width:25%">등급</th><th>의미</th></tr>
+    <tr><td class="c">25 ~ 30점</td><td class="c">LV5 선도</td><td>시스템 기반 디지털 운영 정착</td></tr>
+    <tr><td class="c">20 ~ 24점</td><td class="c">LV4 고도화</td><td>클라우드/협업 기반 전환 진행</td></tr>
+    <tr><td class="c">15 ~ 19점</td><td class="c">LV3 정착</td><td>엑셀·메신저 등 부분 디지털화</td></tr>
+    <tr><td class="c">14점 이하</td><td class="c">LV2 도입</td><td>수기·구두 중심, 디지털 도입 초기</td></tr>
+  </table>
+
+  <div class="footer">- 3 -</div>
+</div>
+
+<!-- ===== 4. 프로세스 & 산출물 ===== -->
+<div class="page">
+  <h2 class="sec">Ⅳ. 진단 프로세스 및 결과 산출물</h2>
+
+  <h3 class="sub">1. 진단 진행 흐름</h3>
+  <div class="flow">
+    <span class="node">① 유형(Track) 선택</span><span class="arr">→</span>
+    <span class="node">② 기업정보 입력</span><span class="arr">→</span>
+    <span class="node">③ 현장사진 기록</span><span class="arr">→</span>
+    <span class="node">④ 6개 영역 진단</span><span class="arr">→</span>
+    <span class="node">⑤ 결과·리포트 발행</span>
+  </div>
+  <div class="ci">기업정보: 기업명·대표자·사업자번호 입력</div>
+  <div class="ci">현장사진: 공장 전경 및 애로사항 사진 기록(선택)</div>
+  <div class="ci">6개 영역 진단: 영역별 척도 선택(스테퍼로 진행률 표시)</div>
+
+  <h3 class="sub">2. 진단 결과 리포트 구성</h3>
+  <table class="t">
+    <tr><th style="width:26%">구성 요소</th><th>내용</th></tr>
+    <tr><td class="lab">종합 점수·등급</td><td>30점 만점 합산 점수 및 LV2~LV5 등급 자동 표시</td></tr>
+    <tr><td class="lab">레이더(Radar) 차트</td><td>6대 영역 균형도를 한눈에 시각화</td></tr>
+    <tr><td class="lab">막대(Bar) 차트</td><td>영역별 점수 비교 — 강·약점 식별</td></tr>
+    <tr><td class="lab">전문가 의견</td><td>진단 전문가가 직접 작성한 종합 의견 리포트 반영</td></tr>
+    <tr><td class="lab">우선 개선과제(RFP)</td><td>취약 영역 기반 개선과제 자동 제안(디지털 작업지시서·모바일 공정관리·품질 이력추적·바코드 재고·데이터 컨설팅·CEO 교육)</td></tr>
+    <tr><td class="lab">리포트 발행</td><td>화면 출력 및 인쇄(PDF) 발행 — 기업별 1부</td></tr>
+  </table>
+
+  <h2 class="sec">Ⅴ. 기술 구현</h2>
+  <table class="t">
+    <tr><th style="width:26%">항목</th><th>내용</th></tr>
+    <tr><td class="lab">구동 형태</td><td>웹 기반(브라우저) 단일 페이지 애플리케이션 — 별도 설치 불필요</td></tr>
+    <tr><td class="lab">사용 환경</td><td>현장 노트북/태블릿에서 즉시 사용, 인터넷 브라우저로 실행</td></tr>
+    <tr><td class="lab">화면/스타일</td><td>Tailwind CSS 기반 반응형 UI, 진행 스테퍼 제공</td></tr>
+    <tr><td class="lab">결과 시각화</td><td>Chart.js 기반 레이더·막대 차트 자동 생성</td></tr>
+    <tr><td class="lab">출력</td><td>브라우저 인쇄 기능을 통한 PDF 리포트 발행(인쇄 전용 레이아웃 적용)</td></tr>
+  </table>
+
+  <h2 class="sec">Ⅵ. 활용 방안 및 기대효과</h2>
+  <div class="sq">20개사 현장진단에 표준 도구로 적용하여 기업 간 비교 가능한 진단 데이터 확보</div>
+  <div class="sq">기업별 우선 개선과제 도출 → 후속 DX 지원사업(컨설팅·시스템 도입)과 직접 연계</div>
+  <div class="sq">봉제 소공인 DX 성숙도 현황(영역별·등급별 분포) 분석을 통한 정책 근거 마련</div>
+
+  <div class="footer">- 4 -</div>
+</div>
+
+<!-- ===== 7. 진단 화면 예시 ===== -->
+<div class="page">
+  <h2 class="sec">Ⅶ. 진단 화면 예시 (실제 구동 화면)</h2>
+  <p class="tx">개발된 진단 프로그램의 실제 구동 화면이다. (예시: Track B 전문 제조사 · 종합 16/30점 · LV3 정착)</p>
+
+  <div class="shots">
+    <figure class="shot">
+      <img src="img/cap1_track.png" alt="기업 유형 선택 화면">
+      <figcaption>① 기업 유형(Track) 선택</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="img/cap2_diagnosis.png" alt="진단 문항 화면">
+      <figcaption>② 영역별 진단 문항 (5단계 척도)</figcaption>
+    </figure>
+  </div>
+
+  <figure class="wide">
+    <img src="img/cap3_result.png" alt="진단 결과 대시보드">
+    <figcaption>③ 진단 결과 — 레이더·막대 차트, 전문가 의견, 우선 개선과제 자동 산출</figcaption>
+  </figure>
+
+  <div class="footer">- 5 -</div>
+</div>
+
+</body>
+</html>

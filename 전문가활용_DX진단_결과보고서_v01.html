@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전문가 활용 DX 진단 결과보고서 - 봉제공장</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Malgun Gothic','Noto Sans KR',sans-serif; }
+  body { background:#525659; color:#1a1a1a; line-height:1.6; font-size:14px; }
+  .page {
+    background:#fff; width:210mm; min-height:297mm; margin:18px auto;
+    padding:20mm 18mm; box-shadow:0 2px 12px rgba(0,0,0,.35);
+  }
+  h1.doc { text-align:center; font-size:22px; font-weight:800; color:#10243e; margin-bottom:4px; letter-spacing:2px; }
+  .doc-sub { text-align:center; font-size:13px; color:#555; margin-bottom:22px; }
+  .block-title { font-size:16px; font-weight:800; color:#10243e; margin:26px 0 8px; }
+  .block-title:first-of-type { margin-top:0; }
+
+  table.form { width:100%; border-collapse:collapse; margin-bottom:8px; table-layout:fixed; }
+  table.form td { border:1px solid #555; padding:8px 9px; vertical-align:middle; word-break:break-all; }
+  td.title { background:#10243e; color:#fff; text-align:center; font-weight:700; font-size:15px; padding:10px; letter-spacing:1px; }
+  td.label { background:#eef2f7; text-align:center; font-weight:700; width:14%; }
+  td.sub   { background:#f6f8fb; text-align:center; font-weight:600; width:9%; color:#333; }
+  td.ctr   { text-align:center; }
+  td.content { padding:12px 14px; line-height:1.85; vertical-align:top; }
+  .bul { margin:2px 0 2px 4px; padding-left:16px; position:relative; }
+  .bul::before { content:'-'; position:absolute; left:0; }
+  .res { margin-top:8px; padding-top:7px; border-top:1px dashed #999; font-weight:700; }
+  .area-head { font-weight:700; color:#1d4ed8; margin:9px 0 2px; }
+  .photo-box { margin-top:12px; }
+  .photo-label { font-weight:700; margin-bottom:5px; }
+  .photo-empty { border:1px solid #999; height:120px; display:flex; align-items:center; justify-content:center; color:#bbb; font-size:12px; }
+
+  .prog-note { font-size:12.5px; color:#10243e; font-weight:700; margin:14px 0 4px; padding-top:8px; border-top:1px solid #d0d7e2; }
+  table.diag { width:100%; border-collapse:collapse; margin:4px 0 6px; font-size:12px; table-layout:fixed; }
+  table.diag th, table.diag td { border:1px solid #8a93a3; padding:5px 6px; vertical-align:middle; }
+  table.diag th { background:#10243e; color:#fff; font-weight:700; text-align:center; }
+  table.diag td.c { text-align:center; }
+  table.diag td.lv { text-align:center; font-weight:800; }
+  table.diag tr:last-child td { background:#eef2f7; font-weight:700; }
+  .lv1 { color:#dc2626; } .lv2 { color:#ea580c; } .lv3 { color:#ca8a04; } .lv4 { color:#16a34a; } .lv5 { color:#2563eb; }
+  .rfp { margin-top:6px; font-size:13px; }
+  .rfp b { color:#10243e; }
+
+  .toolbar { position:fixed; top:12px; right:12px; z-index:50; }
+  .toolbar button { background:#2563eb; color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+  @media print {
+    body { background:#fff; }
+    .page { margin:0; box-shadow:none; width:auto; min-height:auto; padding:14mm; page-break-after:always; }
+    .page:last-child { page-break-after:auto; }
+    .toolbar { display:none; }
+    table.form { page-break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar"><button onclick="window.print()">🖨 인쇄 / PDF 저장</button></div>
+
+<!-- ===== PAGE 1 : 체크리스트 개발 ===== -->
+<div class="page">
+  <h1 class="doc">전문가 활용 DX 진단 결과보고서</h1>
+  <div class="doc-sub">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</div>
+
+  <div class="block-title">1. 의류제조 봉제공장 DX 진단을 위한 체크리스트 개발</div>
+  <table class="form">
+    <tr><td class="title" colspan="7">의류제조 봉제공장 DX 진단을 위한 체크리스트 개발</td></tr>
+    <tr>
+      <td class="label">자문일자</td>
+      <td class="sub">1차</td><td class="ctr">2026.06.15</td>
+      <td class="sub">2차</td><td class="ctr">2026.06.17</td>
+      <td class="sub">3차</td><td class="ctr">2026.06.19</td>
+    </tr>
+    <tr>
+      <td class="label">전 문 가</td>
+      <td class="sub">DX 전환</td><td class="ctr">권오성 기술사</td>
+      <td class="sub">스마트 공장</td><td class="ctr">김기원 경영지도사</td>
+      <td class="sub">경영 등</td><td class="ctr">최성욱 경영지도사</td>
+    </tr>
+    <tr>
+      <td class="label">자문내용</td>
+      <td class="content" colspan="6">
+        <div class="area-head">［권오성 기술사 / DX 전환］</div>
+        <div class="bul">봉제공장 기업 유형(Track) 분류 체계 수립 및 작업지시·기초역량(데이터) 영역 진단 문항 개발</div>
+        <div class="bul">작업지시서 전달방식·생산계획 데이터 활용 수준을 측정하는 디지털 성숙도 5단계 척도(구두→수기→엑셀→클라우드→ERP/MES) 설계</div>
+        <div class="bul">웹 기반 진단 프로그램 기능 요건 정의 및 진단 결과 리포트(차트·개선과제) 자동화 자문</div>
+
+        <div class="area-head">［김기원 경영지도사 / 스마트 공장］</div>
+        <div class="bul">공정관리·품질관리·자재관리(설비 포함) 영역 진단 문항 개발</div>
+        <div class="bul">내부 공정 진행 확인, 생산 불량 기록, 원부자재 수불 등 현장 운영 실태 측정 기준 설정</div>
+        <div class="bul">영역별 개선과제(모바일 공정관리·품질 이력추적·바코드 재고관리) 도출 및 단계적 도입 방향 자문</div>
+
+        <div class="area-head">［최성욱 경영지도사 / 경영］</div>
+        <div class="bul">DX 리더십(대표자 의지) 및 경영·투자 관점 진단 문항 개발</div>
+        <div class="bul">종합 점수(30점)·등급(LV2 도입~LV5 선도) 산정 기준 수립</div>
+        <div class="bul">등급별 후속 지원사업 연계 및 CEO DX 역량 강화 방안 자문</div>
+
+        <div class="res">결과물: 봉제공장 DX 진단 툴 개발서 등 1식 (진단 문항·척도·등급·개선과제 체계 및 웹 진단 프로그램 포함)</div>
+      </td>
+    </tr>
+  </table>
+  <p style="font-size:12px;color:#777;margin-top:6px;">※ 진단 영역·문항·척도·등급 등 세부 구성은 봉제 소공인 현장 실정을 반영하여 설계하였으며, 발주기관과 협의하여 보완·확정함.</p>
+</div>
+
+<!-- ===== PAGE 2 : 골든 어페럴 ===== -->
+<div class="page">
+  <div class="block-title">2. 봉제공장 맞춤 DX 진단을 위한 현장 실태조사</div>
+  <table class="form">
+    <tr><td class="title" colspan="7">봉제공장 맞춤 DX 진단을 위한 현장 실태조사</td></tr>
+    <tr><td class="label">봉제공장명</td><td class="ctr" colspan="6" style="font-weight:700;">골든 어페럴 (부산시 연제구)</td></tr>
+    <tr>
+      <td class="label">실태조사 일자</td>
+      <td class="sub">1차</td><td class="ctr">2026.06.22</td>
+      <td class="sub">2차</td><td class="ctr" colspan="3">2026.06.29</td>
+    </tr>
+    <tr>
+      <td class="label">전 문 가</td>
+      <td class="sub">DX 전환</td><td class="ctr">권오성 기술사</td>
+      <td class="sub">스마트 공장</td><td class="ctr">김기원 경영지도사</td>
+      <td class="sub">경영</td><td class="ctr">최성욱 경영지도사</td>
+    </tr>
+    <tr>
+      <td class="label">실태조사 내용</td>
+      <td class="content" colspan="6">
+        <div class="bul"><b>일반 현황:</b> 여성 캐주얼 의류(블라우스·원피스 등) 임가공 전문 공장. 재단은 발주처에서 수령하고 재봉·시야게(완성)·검단 라인을 자체 운영. 종업원 약 ○○명, 재봉 ○개 라인 규모로, 주 거래 발주처(브랜드) ○~○개사에 대한 OEM 임가공에 매출을 의존. 작업지시서는 종이 출력물과 메신저(카카오톡)로 수령.</div>
+
+        <div class="area-head">[DX 전환 / 권오성 기술사]</div>
+        <div class="bul"><b>작업지시</b> — 발주처 사양서·패턴을 출력해 라인 게시판에 부착하고, 사이즈 스펙·부자재 변경은 작업반장이 구두로 전달. 라인 말단 작업자까지 전달이 지연·누락되어 사이즈 혼입·재작업이 발생하며, 변경 이력이 남지 않아 클레임 발생 시 원인 추적이 불가.</div>
+        <div class="bul"><b>데이터 활용</b> — 생산량·납기가 작업반장 개인 엑셀·수첩으로 관리되어 공장 차원의 통합 데이터가 없음. 과거 생산 실적·불량 데이터가 축적되지 않아 견적·납기 산정이 대표 경험치에 의존.</div>
+        <div class="bul"><b>DX 준비도</b> — 사내 PC는 회계·발주서 출력 용도에 한정되고 현장에는 디지털 기기가 배치되어 있지 않아, 현장 데이터 수집의 출발점 자체가 부재.</div>
+
+        <div class="area-head">[스마트 공장 / 김기원 경영지도사]</div>
+        <div class="bul"><b>공정관리</b> — 일일 생산량을 작업반장이 종이 일보로 마감 후 집계하여 당일 진척을 실시간 확인할 수 없고, 납기 임박 시점에야 지연을 인지. 라인별 부하가 눈대중으로 배분되어 특수봉제·완성 공정에서 병목·정체 발생.</div>
+        <div class="bul"><b>품질관리</b> — 불량을 검단(최종 검사)에서 육안으로 적발하는 사후 방식. 불량 유형(봉제·오염·사이즈)·발생 라인·원인이 기록되지 않아 동일 불량이 반복되고, 재작업 공수가 별도 집계되지 않아 손실 규모 파악이 불가.</div>
+        <div class="bul"><b>자재·설비</b> — 원·부자재(원단·심지·단추·지퍼) 입출고를 수기 장부로 기록하여 실재고와 장부가 불일치. 결품에 의한 라인 대기와 과잉 발주에 의한 재고 사장(死藏)이 동시에 발생하고, 원단 잔단(자투리) 관리가 이루어지지 않음.</div>
+
+        <div class="area-head">[경영 / 최성욱 경영지도사]</div>
+        <div class="bul"><b>DX 리더십</b> — 대표는 디지털 전환의 필요성에 공감하고 정부지원사업 참여 의향을 보유. 다만 전담 인력 부재, 초기 투자 부담, 고령·디지털 비숙련 현장 작업자의 수용성 우려가 도입의 핵심 애로.</div>
+        <div class="bul"><b>조직·역량</b> — 생산관리 전담자 없이 대표·작업반장이 겸임하고 있어, 시스템 도입 시 이를 운영할 주체 확보가 선결 과제.</div>
+        <div class="bul"><b>개선 로드맵(권고)</b> — ①(단기) 디지털 작업지시서·변경 이력 공유로 재작업 감소 → ②(중기) 모바일 생산일보로 실시간 진도·납기 관리 → ③(중기) 불량 이력 DB로 품질 원인 분석 → ④(장기) 자재 수불 전산화. 저비용·현장 친화적 도구부터 단계적으로 도입.</div>
+
+        <div class="prog-note">▣ DX 진단 시스템 평가 결과 (Track B 전문 제조사 · 6개 영역 · 5단계 척도)</div>
+        <table class="diag">
+          <tr><th style="width:14%">진단영역</th><th style="width:27%">진단 문항</th><th style="width:9%">수준</th><th style="width:50%">현 수준(척도) 및 관찰</th></tr>
+          <tr><td class="c">작업지시</td><td>현장 작업지시서 전달 방식</td><td class="lv lv2">2단계</td><td>수기 장부/화이트보드 — 발주처 지시서를 출력·부착, 변경은 구두 전달(이력 미보존)</td></tr>
+          <tr><td class="c">공정관리</td><td>내부 공정 진행 확인</td><td class="lv lv2">2단계</td><td>수기 일보 — 종이 일보 마감 후 집계, 실시간 진도 파악 불가</td></tr>
+          <tr><td class="c">품질관리</td><td>생산 불량 기록 방식</td><td class="lv lv1">1단계</td><td>기록 없음 — 검단 육안 적발, 불량 유형·원인 미기록</td></tr>
+          <tr><td class="c">자재관리</td><td>원부자재 수불 관리</td><td class="lv lv2">2단계</td><td>수기 장부 — 실재고·장부 불일치, 결품·과잉 반복</td></tr>
+          <tr><td class="c">기초역량</td><td>생산 계획 데이터 활용</td><td class="lv lv2">2단계</td><td>일부 엑셀(반장 개인) — 통합 데이터 없음, 견적·납기 경험 의존</td></tr>
+          <tr><td class="c">DX 리더십</td><td>대표자 의지 및 관심도</td><td class="lv lv3">3단계</td><td>관심 있음 — 필요성 공감·지원사업 참여 의향, 전담 인력·투자 여력 부족</td></tr>
+          <tr><td class="c">종합</td><td class="c">합계 / 등급</td><td class="lv lv2">12점</td><td><b>12 / 30점 → LV2 도입 단계</b></td></tr>
+        </table>
+        <div class="rfp"><b>우선 개선과제(RFP):</b> ① 품질 이력 추적 시스템(품질 1단계) → ② 디지털 작업지시서 도입(작업지시) → ③ 모바일 공정관리 시스템(공정)</div>
+        <div class="photo-box">
+          <div class="photo-label">■ 관련 사진</div>
+          <div class="photo-empty">(현장 사진 첨부 예정)</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- ===== PAGE 3 : 네이비짐 ===== -->
+<div class="page">
+  <div class="block-title">2. 봉제공장 맞춤 DX 진단을 위한 현장 실태조사</div>
+  <table class="form">
+    <tr><td class="title" colspan="7">봉제공장 맞춤 DX 진단을 위한 현장 실태조사</td></tr>
+    <tr><td class="label">봉제공장명</td><td class="ctr" colspan="6" style="font-weight:700;">네이비짐 (NavyGym, 부산시 남구 문현동)</td></tr>
+    <tr>
+      <td class="label">실태조사 일자</td>
+      <td class="sub">1차</td><td class="ctr">2026.06.23</td>
+      <td class="sub">2차</td><td class="ctr" colspan="3">2026.06.30</td>
+    </tr>
+    <tr>
+      <td class="label">전 문 가</td>
+      <td class="sub">DX 전환</td><td class="ctr">권오성 기술사</td>
+      <td class="sub">스마트 공장</td><td class="ctr">김기원 경영지도사</td>
+      <td class="sub">경영</td><td class="ctr">최성욱 경영지도사</td>
+    </tr>
+    <tr>
+      <td class="label">실태조사 내용</td>
+      <td class="content" colspan="6">
+        <div class="bul"><b>일반 현황:</b> 자체 스포츠웨어 브랜드 '네이비짐(NavyGym)'을 보유한 의류 제조 기업 <span style="color:#1d4ed8;">(2013년 설립 · 대표 김대윤 · 종업원 약 13명 · 부산 남구 문현동)</span>. 요가복·체육복(스쿨웨어) 등 기능성 스포츠웨어를 국내 자체 생산하며 온라인 자사몰을 통해 직접 판매. 소량 다품종 생산 구조로 나염·전사·자수 등 일부 공정을 외주 협력사에 위탁.</div>
+
+        <div class="area-head">[DX 전환 / 권오성 기술사]</div>
+        <div class="bul"><b>작업지시</b> — 단체복 특성상 사이즈·로고·색상 조합 사양이 주문마다 상이하고 발주처 요청 변경이 잦음. 변경 사양이 전화·메신저로 단편적으로 전달되고 통합 사양서로 갱신되지 않아, 라인에서 구버전 사양으로 생산하는 사고가 발생.</div>
+        <div class="bul"><b>데이터 활용</b> — 납기·진행·불량 정보가 영업·생산 담당자별 엑셀과 메신저에 흩어져 있어 동일 주문의 현재 상태를 한눈에 조회할 수 없음. 외주 발주·입고 현황도 별도로 관리되어 전체 진행 파악이 어려움.</div>
+
+        <div class="area-head">[스마트 공장 / 김기원 경영지도사]</div>
+        <div class="bul"><b>공정관리</b> — 공정별 진척을 사무실 화이트보드에 수기로 표기. 외주(나염·자수) 진행 상황은 협력사 전화 확인에 의존해 파악이 지연되고, 외주 납기 지연이 곧바로 전체 납기 리스크로 직결.</div>
+        <div class="bul"><b>품질관리</b> — 치수 불량·봉제 불량이 주요 불량 유형. 검사 기준(허용 공차·검사 항목)이 문서화되어 있지 않아 검사자·작업자별 판정 편차가 크고, 외주 가공품(나염·자수)의 입고 검사 기준도 미비.</div>
+        <div class="bul"><b>자재관리</b> — 기능성 원단·지퍼·밴드 등 다품종 부자재의 종류가 많아 결품이 빈번해 라인 대기가 발생. 발주 시점이 담당자 기억·수기 관리에 의존하여 적기 발주에 실패.</div>
+
+        <div class="area-head">[경영 / 최성욱 경영지도사]</div>
+        <div class="bul"><b>DX 리더십</b> — 자체 브랜드 온라인 자사몰 운영 경험으로 디지털 도구 수용도가 비교적 높고, 협업툴·클라우드 도입에 적극적. 개선 의지와 학습 역량이 양호하여 변화 추진 동력이 충분.</div>
+        <div class="bul"><b>조직·역량</b> — 영업·생산 간 정보 단절이 핵심 손실 지점으로, 주문 단위의 상태 공유 체계만 갖춰도 단기 개선 효과 기대.</div>
+        <div class="bul"><b>개선 로드맵(권고)</b> — ①(단기) 협업툴(클라우드 사양서·진행보드)로 사양·진행 실시간 공유 → ②(단기) 외주 진도·납기 공유 체계 구축 → ③(중기) 부자재 안전재고·발주 알림 도입 → ④(중기) 검사 기준 표준화·입고검사 체크리스트. 수용도가 높아 단기 성과가 기대됨.</div>
+
+        <div class="prog-note">▣ DX 진단 시스템 평가 결과 (Track B 전문 제조사 · 6개 영역 · 5단계 척도)</div>
+        <table class="diag">
+          <tr><th style="width:14%">진단영역</th><th style="width:27%">진단 문항</th><th style="width:9%">수준</th><th style="width:50%">현 수준(척도) 및 관찰</th></tr>
+          <tr><td class="c">작업지시</td><td>현장 작업지시서 전달 방식</td><td class="lv lv3">3단계</td><td>엑셀 및 메신저 공유 — 전화·메신저로 사양 전달, 통합 사양서 미갱신(구버전 생산 사고)</td></tr>
+          <tr><td class="c">공정관리</td><td>내부 공정 진행 확인</td><td class="lv lv2">2단계</td><td>화이트보드 — 외주(나염·자수) 진도는 전화 확인, 파악 지연으로 납기 리스크</td></tr>
+          <tr><td class="c">품질관리</td><td>생산 불량 기록 방식</td><td class="lv lv2">2단계</td><td>수기 기록 — 검사 기준 미문서화, 검사자·작업자별 판정 편차</td></tr>
+          <tr><td class="c">자재관리</td><td>원부자재 수불 관리</td><td class="lv lv2">2단계</td><td>수기 — 다품종 부자재 결품 빈번, 발주 시점 기억 의존</td></tr>
+          <tr><td class="c">기초역량</td><td>생산 계획 데이터 활용</td><td class="lv lv3">3단계</td><td>엑셀·메신저 — 담당자별 산재, 주문 단위 통합 조회 불가</td></tr>
+          <tr><td class="c">DX 리더십</td><td>대표자 의지 및 관심도</td><td class="lv lv4">4단계</td><td>적극적 의지 — 2세 경영 참여, 협업툴·클라우드 도입에 적극</td></tr>
+          <tr><td class="c">종합</td><td class="c">합계 / 등급</td><td class="lv lv3">16점</td><td><b>16 / 30점 → LV3 정착 단계</b></td></tr>
+        </table>
+        <div class="rfp"><b>우선 개선과제(RFP):</b> ① 모바일 공정관리 시스템(공정·외주 가시화) → ② 품질 이력 추적 시스템(품질) → ③ 바코드 재고관리 도입(자재)</div>
+        <div class="photo-box">
+          <div class="photo-label">■ 관련 사진</div>
+          <div class="photo-empty">(현장 사진 첨부 예정)</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- ===== PAGE 4 : 굿트러스트 ===== -->
+<div class="page">
+  <div class="block-title">2. 봉제공장 맞춤 DX 진단을 위한 현장 실태조사</div>
+  <table class="form">
+    <tr><td class="title" colspan="7">봉제공장 맞춤 DX 진단을 위한 현장 실태조사</td></tr>
+    <tr><td class="label">봉제공장명</td><td class="ctr" colspan="6" style="font-weight:700;">굿트러스트 (㈜굿트러스트, 부산시 동구)</td></tr>
+    <tr>
+      <td class="label">실태조사 일자</td>
+      <td class="sub">1차</td><td class="ctr">2026.06.24</td>
+      <td class="sub">2차</td><td class="ctr" colspan="3">2026.07.01</td>
+    </tr>
+    <tr>
+      <td class="label">전 문 가</td>
+      <td class="sub">DX 전환</td><td class="ctr">권오성 기술사</td>
+      <td class="sub">스마트 공장</td><td class="ctr">김기원 경영지도사</td>
+      <td class="sub">경영</td><td class="ctr">최성욱 경영지도사</td>
+    </tr>
+    <tr>
+      <td class="label">실태조사 내용</td>
+      <td class="content" colspan="6">
+        <div class="bul"><b>일반 현황:</b> ㈜굿트러스트 — 미주·유럽 수출용 니트 골프웨어·폴로·티셔츠 등을 생산하는 OEM·ODM 의류 제조·수출 기업 <span style="color:#1d4ed8;">(대표 박영근 · 종업원 약 61명 · 본사 부산 동구 초량동 GT빌딩)</span>. 'Made in Korea' 원칙으로 원단·봉제 등 전 공정을 국내에서 진행하며, 소량 생산(첫 오더 100장)부터 대응.</div>
+
+        <div class="area-head">[DX 전환 / 권오성 기술사]</div>
+        <div class="bul"><b>작업지시</b> — 해외 바이어 사양서(스펙)를 기준으로 생산하며, 사양·승인 커뮤니케이션이 이메일·메신저로 이루어지나 통합 사양 관리 체계가 없어 버전 혼선 우려.</div>
+        <div class="bul"><b>데이터 활용</b> — 수주·생산·납기 데이터가 부서별 엑셀로 관리되어 부분 디지털화 단계이며, 전사 통합·분석 체계는 미흡.</div>
+
+        <div class="area-head">[스마트 공장 / 김기원 경영지도사]</div>
+        <div class="bul"><b>공정관리</b> — 편직·봉제·완성 등 다공정을 운영하며, 공정 진척 관리가 부분 수기로 이루어져 라인 간 부하·납기 가시성에 개선 여지.</div>
+        <div class="bul"><b>품질관리</b> — 미주·유럽 수출 품질기준 충족을 위한 검사를 수행하나, 불량 데이터의 디지털 축적·원인 분석은 미흡하여 재발 방지 체계가 부족.</div>
+        <div class="bul"><b>자재관리</b> — 원사·원단·부자재 수불이 수기 중심으로 관리되어 재고 정확도·발주 적시성에 한계.</div>
+
+        <div class="area-head">[경영 / 최성욱 경영지도사]</div>
+        <div class="bul"><b>DX 리더십</b> — 대표가 'Made in Korea' 국내 생산·품질 신뢰 경영철학을 바탕으로 설비·품질 투자에 적극적이며, 디지털 전환 의지를 보유.</div>
+        <div class="bul"><b>조직·역량</b> — 수출 OEM 특성상 바이어 대응·품질 관리 역량은 갖췄으나, 생산현장의 데이터 기반 관리 체계는 보강 필요.</div>
+        <div class="bul"><b>개선 로드맵(권고)</b> — ①(단기) 통합 사양·수주 관리 → ②(중기) 공정 진척·품질 데이터 디지털화 → ③(중기) 자재 바코드 관리 → ④(장기) 전사 데이터 통합.</div>
+
+        <div class="prog-note">▣ DX 진단 시스템 평가 결과 (Track B 전문 제조사 · 6개 영역 · 5단계 척도)</div>
+        <table class="diag">
+          <tr><th style="width:14%">진단영역</th><th style="width:27%">진단 문항</th><th style="width:9%">수준</th><th style="width:50%">현 수준(척도) 및 관찰</th></tr>
+          <tr><td class="c">작업지시</td><td>현장 작업지시서 전달 방식</td><td class="lv lv3">3단계</td><td>엑셀·메신저 — 바이어 사양 기반, 통합 사양관리 체계 미흡</td></tr>
+          <tr><td class="c">공정관리</td><td>내부 공정 진행 확인</td><td class="lv lv2">2단계</td><td>부분 수기 — 다공정 진척·라인 부하 가시성 한계</td></tr>
+          <tr><td class="c">품질관리</td><td>생산 불량 기록 방식</td><td class="lv lv3">3단계</td><td>수기·부분 기록 — 수출 검사 수행하나 불량 데이터 축적·분석 미흡</td></tr>
+          <tr><td class="c">자재관리</td><td>원부자재 수불 관리</td><td class="lv lv2">2단계</td><td>수기 — 원사·원단 재고 정확도·발주 적시성 한계</td></tr>
+          <tr><td class="c">기초역량</td><td>생산 계획 데이터 활용</td><td class="lv lv3">3단계</td><td>부서별 엑셀 — 전사 통합·분석 체계 미흡</td></tr>
+          <tr><td class="c">DX 리더십</td><td>대표자 의지 및 관심도</td><td class="lv lv4">4단계</td><td>적극적 의지 — 국내생산·품질 투자, 디지털 전환 의지 보유</td></tr>
+          <tr><td class="c">종합</td><td class="c">합계 / 등급</td><td class="lv lv3">17점</td><td><b>17 / 30점 → LV3 정착 단계</b></td></tr>
+        </table>
+        <div class="rfp"><b>우선 개선과제(RFP):</b> ① 모바일 공정관리 시스템(공정) → ② 품질 이력 추적 시스템(품질 데이터화) → ③ 바코드 재고관리 도입(자재)</div>
+        <div class="photo-box">
+          <div class="photo-label">■ 관련 사진</div>
+          <div class="photo-empty">(현장 사진 첨부 예정)</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+</body>
+</html>
