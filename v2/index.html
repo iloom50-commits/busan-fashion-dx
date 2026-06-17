@@ -6,6 +6,8 @@
     <title>기업 자가진단 | 부산 패션 소공인 DX 진단</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Noto Sans KR', sans-serif; }
@@ -112,6 +114,41 @@
 </main>
 
 <script>
+firebase.initializeApp({
+    apiKey: "AIzaSyDCS1ut21a-x-l1dUiS2QbR9wxOUxbK6pY",
+    authDomain: "dx-tool-d262e.firebaseapp.com",
+    projectId: "dx-tool-d262e",
+    storageBucket: "dx-tool-d262e.firebasestorage.app",
+    messagingSenderId: "145376564416",
+    appId: "1:145376564416:web:2ad06b81bb48ecf81f8925"
+});
+const db = firebase.firestore();
+
+async function saveDiagnosis() {
+    if (state.saved) return;
+    state.saved = true;
+    const statusEl = document.getElementById('save-status');
+    try {
+        await db.collection('diagnoses').add({
+            type: 'self',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            company: state.info.comp,
+            ceo: state.info.ceo || '',
+            emp: state.info.emp || '',
+            bizType: state.info.biz_type || '',
+            track: state.track,
+            gradeLv: state.grade.lv,
+            gradeTxt: state.grade.txt,
+            totalScore: Object.values(state.grade.scores).reduce((a,b)=>a+b,0),
+            scores: state.grade.scores
+        });
+        if (statusEl) statusEl.innerHTML = '<span class="text-green-600 text-xs font-bold">✓ 결과가 부산테크노파크에 전송되었습니다</span>';
+    } catch(e) {
+        state.saved = false;
+        if (statusEl) statusEl.innerHTML = '<span class="text-red-400 text-xs">⚠ 저장 실패 — PDF로 결과를 저장해주세요</span>';
+    }
+}
+
 const DATA = {
     tracks: {
         A: { icon:'🎨', title:'외주형 브랜드',  desc:'디자인 중심 / 생산 외주' },
@@ -187,7 +224,7 @@ const STEPS = [
 
 let state = {
     step:'self-info', track:null,
-    info:{}, selfScores:{}, grade:null
+    info:{}, selfScores:{}, grade:null, saved:false
 };
 let charts = {};
 
@@ -342,11 +379,12 @@ function renderResult(el) {
                 📄 결과보고서 출력 (PDF)
             </button>
         </div>
-        <div class="text-center">
+        <div id="save-status" class="text-center mt-2 h-5"></div>
+        <div class="text-center mt-1">
             <button onclick="restart()" class="text-xs text-gray-400 underline">처음부터 다시 시작</button>
         </div>
     </div>`;
-    setTimeout(() => drawCharts('dash', state.grade.scores), 100);
+    setTimeout(() => { drawCharts('dash', state.grade.scores); saveDiagnosis(); }, 100);
 }
 
 // ===== 액션 =====
@@ -388,7 +426,7 @@ function setTrack(t) {
 }
 
 function restart() {
-    state = { step:'self-info', track:null, info:{}, selfScores:{}, grade:null };
+    state = { step:'self-info', track:null, info:{}, selfScores:{}, grade:null, saved:false };
     document.getElementById('hd-company').classList.add('hidden');
     document.getElementById('hd-track').classList.add('hidden');
     render();

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드 | 부산 패션 소공인 DX 진단</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; }
+        body { background: #f0f2f5; color: #1f2937; min-height: 100vh; }
+        .stat-card { background: white; border-radius: 10px; padding: 1.25rem 1.5rem; border: 1px solid #e5e7eb; }
+        th { background: #f8fafc; font-size: 0.72rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.65rem 0.75rem; white-space: nowrap; }
+        td { font-size: 0.82rem; padding: 0.6rem 0.75rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        tr:hover td { background: #f8fafc; }
+        select { border: 1px solid #e2e8f0; border-radius: 7px; padding: 0.4rem 0.75rem; font-size: 0.82rem; background: white; }
+        .badge { display: inline-flex; align-items: center; padding: 0.15rem 0.55rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<div id="auth-screen" class="fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-10 text-center w-80 shadow-2xl">
+        <div class="text-4xl mb-4">🔐</div>
+        <h2 class="text-xl font-bold mb-1">관리자 로그인</h2>
+        <p class="text-xs text-gray-400 mb-5">부산테크노파크 관계자 전용</p>
+        <input id="pw-input" type="password" placeholder="비밀번호 입력"
+            class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm mb-3 text-center"
+            onkeydown="if(event.key==='Enter')checkPw()">
+        <button onclick="checkPw()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold text-sm">확인</button>
+        <p id="pw-err" class="text-red-500 text-xs mt-2 hidden">비밀번호가 올바르지 않습니다</p>
+    </div>
+</div>
+
+<div id="app" class="hidden">
+    <header class="bg-[#1e3a5f] text-white px-6 py-4 flex items-center justify-between shadow">
+        <div class="flex items-center gap-3">
+            <span class="w-7 h-7 bg-blue-500 rounded flex items-center justify-center text-xs font-bold">DX</span>
+            <div>
+                <div class="font-bold text-lg leading-tight">관리자 대시보드</div>
+                <div class="text-blue-300 text-xs">2026 부산 패션 소공인 DX 역량진단 · 재단법인 부산테크노파크</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="loadData()" class="bg-blue-600 hover:bg-blue-700 px-4 py-1.5 rounded-lg text-sm font-bold">🔄 새로고침</button>
+            <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 px-4 py-1.5 rounded-lg text-sm font-bold">📥 CSV 내보내기</button>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 py-6">
+
+        <!-- 통계 카드 -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+            <div class="stat-card">
+                <div class="text-xs text-gray-400 font-bold uppercase mb-1">전체 진단</div>
+                <div class="text-3xl font-bold text-gray-800" id="st-total">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-xs text-blue-500 font-bold uppercase mb-1">자가진단</div>
+                <div class="text-3xl font-bold text-blue-600" id="st-self">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-xs text-green-600 font-bold uppercase mb-1">전문가 진단</div>
+                <div class="text-3xl font-bold text-green-600" id="st-expert">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-xs text-gray-400 font-bold uppercase mb-1">이번 달</div>
+                <div class="text-3xl font-bold text-gray-800" id="st-month">-</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <!-- 등급 분포 차트 -->
+            <div class="bg-white rounded-xl border border-gray-200 p-4 col-span-1">
+                <h3 class="text-sm font-bold text-gray-700 mb-3">등급 분포</h3>
+                <canvas id="chart-grade" height="160"></canvas>
+            </div>
+            <!-- 영역별 평균 점수 -->
+            <div class="bg-white rounded-xl border border-gray-200 p-4 col-span-2">
+                <h3 class="text-sm font-bold text-gray-700 mb-3">영역별 평균 점수</h3>
+                <canvas id="chart-area" height="130"></canvas>
+            </div>
+        </div>
+
+        <!-- 필터 -->
+        <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex items-center gap-4 flex-wrap">
+            <span class="text-xs font-bold text-gray-500">필터</span>
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-500">유형</label>
+                <select id="f-type" onchange="applyFilter()">
+                    <option value="">전체</option>
+                    <option value="self">자가진단</option>
+                    <option value="expert">전문가 진단</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-500">Track</label>
+                <select id="f-track" onchange="applyFilter()">
+                    <option value="">전체</option>
+                    <option value="A">Track A</option>
+                    <option value="B">Track B</option>
+                    <option value="C">Track C</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-500">등급</label>
+                <select id="f-grade" onchange="applyFilter()">
+                    <option value="">전체</option>
+                    <option value="5">LV5. 선도</option>
+                    <option value="4">LV4. 고도화</option>
+                    <option value="3">LV3. 정착</option>
+                    <option value="2">LV2. 도입</option>
+                    <option value="1">LV1. 기초</option>
+                </select>
+            </div>
+            <span id="filter-count" class="ml-auto text-xs text-gray-400"></span>
+        </div>
+
+        <!-- 테이블 -->
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div id="loading" class="text-center py-16 text-gray-400">
+                <div class="text-3xl mb-3">⏳</div>
+                <p class="text-sm">데이터 불러오는 중...</p>
+            </div>
+            <div id="table-wrap" class="hidden overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr>
+                            <th class="text-left">진단일시</th>
+                            <th class="text-left">기업명</th>
+                            <th class="text-left">대표자</th>
+                            <th class="text-left">종업원</th>
+                            <th class="text-center">유형</th>
+                            <th class="text-center">Track</th>
+                            <th class="text-center">등급</th>
+                            <th class="text-center">총점</th>
+                            <th class="text-center">작업지시</th>
+                            <th class="text-center">공정관리</th>
+                            <th class="text-center">품질관리</th>
+                            <th class="text-center">자재관리</th>
+                            <th class="text-center">기초역량</th>
+                            <th class="text-center">DX리더십</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+            <div id="empty" class="hidden text-center py-16 text-gray-300">
+                <div class="text-4xl mb-3">📭</div>
+                <p class="text-sm">조건에 맞는 데이터가 없습니다</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = 'busan2026';
+
+firebase.initializeApp({
+    apiKey: "AIzaSyDCS1ut21a-x-l1dUiS2QbR9wxOUxbK6pY",
+    authDomain: "dx-tool-d262e.firebaseapp.com",
+    projectId: "dx-tool-d262e",
+    storageBucket: "dx-tool-d262e.firebasestorage.app",
+    messagingSenderId: "145376564416",
+    appId: "1:145376564416:web:2ad06b81bb48ecf81f8925"
+});
+const db = firebase.firestore();
+
+let allData = [];
+let charts = {};
+
+function checkPw() {
+    const val = document.getElementById('pw-input').value;
+    if (val === ADMIN_PASSWORD) {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        loadData();
+    } else {
+        document.getElementById('pw-err').classList.remove('hidden');
+        document.getElementById('pw-input').value = '';
+    }
+}
+
+async function loadData() {
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('table-wrap').classList.add('hidden');
+    document.getElementById('empty').classList.add('hidden');
+
+    try {
+        const snap = await db.collection('diagnoses').orderBy('timestamp', 'desc').get();
+        allData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderStats(allData);
+        renderCharts(allData);
+        applyFilter();
+    } catch(e) {
+        document.getElementById('loading').innerHTML = `<div class="text-center py-16 text-red-400"><div class="text-3xl mb-3">⚠️</div><p class="text-sm">데이터 로드 실패: ${e.message}</p><p class="text-xs mt-2 text-gray-400">Firestore 데이터베이스가 활성화되어 있는지 확인해주세요</p></div>`;
+    }
+}
+
+function renderStats(data) {
+    const now = new Date();
+    const thisMonth = data.filter(d => {
+        if (!d.timestamp) return false;
+        const t = d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp);
+        return t.getFullYear() === now.getFullYear() && t.getMonth() === now.getMonth();
+    });
+    document.getElementById('st-total').innerText  = data.length;
+    document.getElementById('st-self').innerText   = data.filter(d=>d.type==='self').length;
+    document.getElementById('st-expert').innerText = data.filter(d=>d.type==='expert').length;
+    document.getElementById('st-month').innerText  = thisMonth.length;
+}
+
+function renderCharts(data) {
+    // 등급 분포
+    const gradeCounts = {1:0,2:0,3:0,4:0,5:0};
+    data.forEach(d => { if(d.gradeLv) gradeCounts[d.gradeLv]++; });
+    if (charts.grade) charts.grade.destroy();
+    charts.grade = new Chart(document.getElementById('chart-grade'), {
+        type: 'doughnut',
+        data: {
+            labels: ['LV1.기초','LV2.도입','LV3.정착','LV4.고도화','LV5.선도'],
+            datasets: [{
+                data: [gradeCounts[1],gradeCounts[2],gradeCounts[3],gradeCounts[4],gradeCounts[5]],
+                backgroundColor: ['#dc2626','#ea580c','#ca8a04','#16a34a','#2563eb'],
+                borderWidth: 2
+            }]
+        },
+        options: { plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8 } } } }
+    });
+
+    // 영역별 평균
+    const areas = ['work','process','quality','material','basic','leader'];
+    const areaNames = ['작업지시','공정관리','품질관리','자재관리','기초역량','DX리더십'];
+    const areaAvg = areas.map(a => {
+        const vals = data.filter(d=>d.scores&&d.scores[a]).map(d=>d.scores[a]);
+        return vals.length ? (vals.reduce((s,v)=>s+v,0)/vals.length).toFixed(2) : 0;
+    });
+    if (charts.area) charts.area.destroy();
+    charts.area = new Chart(document.getElementById('chart-area'), {
+        type: 'bar',
+        data: {
+            labels: areaNames,
+            datasets: [{
+                label: '평균 점수',
+                data: areaAvg,
+                backgroundColor: areaAvg.map(v => v < 2 ? '#ef4444' : v < 3.5 ? '#f59e0b' : '#22c55e'),
+                borderRadius: 4
+            }]
+        },
+        options: {
+            scales: { y: { min: 0, max: 5, grid: { color: '#f1f5f9' } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function applyFilter() {
+    const fType  = document.getElementById('f-type').value;
+    const fTrack = document.getElementById('f-track').value;
+    const fGrade = document.getElementById('f-grade').value;
+
+    const filtered = allData.filter(d => {
+        if (fType  && d.type    !== fType)           return false;
+        if (fTrack && d.track   !== fTrack)          return false;
+        if (fGrade && String(d.gradeLv) !== fGrade)  return false;
+        return true;
+    });
+
+    document.getElementById('filter-count').innerText = `${filtered.length}건`;
+    document.getElementById('loading').classList.add('hidden');
+
+    if (filtered.length === 0) {
+        document.getElementById('table-wrap').classList.add('hidden');
+        document.getElementById('empty').classList.remove('hidden');
+        return;
+    }
+
+    document.getElementById('empty').classList.add('hidden');
+    document.getElementById('table-wrap').classList.remove('hidden');
+
+    const gradeColor = { 5:'bg-blue-100 text-blue-700', 4:'bg-green-100 text-green-700',
+                         3:'bg-yellow-100 text-yellow-700', 2:'bg-orange-100 text-orange-700',
+                         1:'bg-red-100 text-red-700' };
+    const typeColor  = { self:'bg-blue-50 text-blue-600', expert:'bg-green-50 text-green-700' };
+    const typeLabel  = { self:'자가진단', expert:'전문가' };
+
+    document.getElementById('tbody').innerHTML = filtered.map(d => {
+        const ts = d.timestamp?.toDate ? d.timestamp.toDate() : (d.timestamp ? new Date(d.timestamp) : null);
+        const dateStr = ts ? ts.toLocaleString('ko-KR', {year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
+        const sc = d.scores || {};
+        const score = v => v != null ? `<span class="${v<=2?'text-red-500':v>=4?'text-green-600':''} font-bold">${v}</span>` : '-';
+        return `<tr>
+            <td class="text-gray-400 text-xs">${dateStr}</td>
+            <td class="font-bold text-gray-800">${d.company||'-'}</td>
+            <td>${d.ceo||'-'}</td>
+            <td class="text-gray-500">${d.emp||'-'}</td>
+            <td class="text-center"><span class="badge ${typeColor[d.type]||''}">${typeLabel[d.type]||d.type}</span></td>
+            <td class="text-center font-bold text-gray-600">Track ${d.track||'-'}</td>
+            <td class="text-center"><span class="badge ${gradeColor[d.gradeLv]||''}">${d.gradeTxt||'-'}</span></td>
+            <td class="text-center font-bold">${d.totalScore||'-'}</td>
+            <td class="text-center">${score(sc.work)}</td>
+            <td class="text-center">${score(sc.process)}</td>
+            <td class="text-center">${score(sc.quality)}</td>
+            <td class="text-center">${score(sc.material)}</td>
+            <td class="text-center">${score(sc.basic)}</td>
+            <td class="text-center">${score(sc.leader)}</td>
+        </tr>`;
+    }).join('');
+}
+
+function exportCSV() {
+    const fType  = document.getElementById('f-type').value;
+    const fTrack = document.getElementById('f-track').value;
+    const fGrade = document.getElementById('f-grade').value;
+    const data = allData.filter(d => {
+        if (fType  && d.type    !== fType)           return false;
+        if (fTrack && d.track   !== fTrack)          return false;
+        if (fGrade && String(d.gradeLv) !== fGrade)  return false;
+        return true;
+    });
+
+    const header = ['진단일시','기업명','대표자','종업원','유형','Track','등급','총점','작업지시','공정관리','품질관리','자재관리','기초역량','DX리더십'];
+    const rows = data.map(d => {
+        const ts = d.timestamp?.toDate ? d.timestamp.toDate() : (d.timestamp ? new Date(d.timestamp) : null);
+        const dateStr = ts ? ts.toLocaleString('ko-KR') : '';
+        const sc = d.scores || {};
+        return [dateStr, d.company||'', d.ceo||'', d.emp||'', d.type==='self'?'자가진단':'전문가진단',
+                d.track||'', d.gradeTxt||'', d.totalScore||'',
+                sc.work||'', sc.process||'', sc.quality||'', sc.material||'', sc.basic||'', sc.leader||''];
+    });
+
+    const bom = '﻿';
+    const csv = bom + [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+    a.download = `DX진단결과_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+}
+</script>
+</body>
+</html>

@@ -6,6 +6,8 @@
     <title>전문가 진단 | 부산 패션 소공인 DX 진단</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Noto Sans KR', sans-serif; }
@@ -106,6 +108,45 @@
 </main>
 
 <script>
+firebase.initializeApp({
+    apiKey: "AIzaSyDCS1ut21a-x-l1dUiS2QbR9wxOUxbK6pY",
+    authDomain: "dx-tool-d262e.firebaseapp.com",
+    projectId: "dx-tool-d262e",
+    storageBucket: "dx-tool-d262e.firebasestorage.app",
+    messagingSenderId: "145376564416",
+    appId: "1:145376564416:web:2ad06b81bb48ecf81f8925"
+});
+const db = firebase.firestore();
+
+async function saveDiagnosis() {
+    if (state.saved) return;
+    state.saved = true;
+    const statusEl = document.getElementById('save-status');
+    try {
+        await db.collection('diagnoses').add({
+            type: 'expert',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            company: state.info.comp,
+            ceo: state.info.ceo || '',
+            emp: state.info.emp || '',
+            bizNum: state.info.biz || '',
+            track: state.track,
+            gradeLv: state.grade.lv,
+            gradeTxt: state.grade.txt,
+            totalScore: Object.values(state.grade.scores).reduce((a,b)=>a+b,0),
+            scores: state.grade.scores,
+            causes: state.causes,
+            solutions: state.solutions,
+            roadmap: { short: state.roadmap.short, mid: state.roadmap.mid, long: state.roadmap.long },
+            opinion: state.opinion
+        });
+        if (statusEl) statusEl.innerHTML = '<span class="text-green-600 text-xs font-bold">✓ 진단 결과가 저장되었습니다</span>';
+    } catch(e) {
+        state.saved = false;
+        if (statusEl) statusEl.innerHTML = '<span class="text-red-400 text-xs">⚠ 저장 실패 — 리포트를 PDF로 출력해주세요</span>';
+    }
+}
+
 const DATA = {
     tracks: {
         A: { icon:'🎨', title:'외주형 브랜드',  desc:'디자인 중심 / 생산 외주' },
@@ -204,7 +245,7 @@ let state = {
     step:0, track:null,
     info:{}, scores:{}, causes:{}, solutions:{},
     roadmap:{ short:[], mid:[], long:[], _built:false },
-    opinion:'', grade:null
+    opinion:'', grade:null, saved:false
 };
 let charts = {};
 
@@ -460,11 +501,12 @@ function renderResult(el) {
         <button onclick="printExpertReport()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow transition-all mb-3">
             📄 전문가 진단 리포트 발행
         </button>
-        <div class="text-center">
+        <div id="save-status" class="text-center mt-2 h-5"></div>
+        <div class="text-center mt-1">
             <button onclick="restart()" class="text-xs text-gray-400 underline">새 기업 진단 시작</button>
         </div>
     </div>`;
-    setTimeout(() => drawCharts('dash', state.grade.scores), 100);
+    setTimeout(() => { drawCharts('dash', state.grade.scores); saveDiagnosis(); }, 100);
 }
 
 // ===== 액션 =====
@@ -536,7 +578,7 @@ function saveOpinion() {
 
 function restart() {
     state = { step:0, track:null, info:{}, scores:{}, causes:{}, solutions:{},
-              roadmap:{short:[],mid:[],long:[],_built:false}, opinion:'', grade:null };
+              roadmap:{short:[],mid:[],long:[],_built:false}, opinion:'', grade:null, saved:false };
     document.getElementById('hd-company').classList.add('hidden');
     document.getElementById('hd-track').classList.add('hidden');
     render();
