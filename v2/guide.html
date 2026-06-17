@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용 안내 | 부산 패션 소공인 DX 진단 시스템</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f0f2f5; color: #1f2937; }
+
+        header {
+            background: #1e3a5f;
+            color: white;
+            padding: 2rem 2.5rem;
+            text-align: center;
+        }
+        header .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 999px;
+            font-size: 0.75rem;
+            padding: 0.3rem 1rem;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        header h1 { font-size: 1.8rem; font-weight: 900; margin-bottom: 0.4rem; }
+        header p  { font-size: 0.9rem; color: #93c5fd; }
+
+        .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            margin-bottom: 1.5rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-header {
+            padding: 1.4rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .card-header .icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+        .card-header h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.15rem; }
+        .card-header p  { font-size: 0.8rem; opacity: 0.7; }
+
+        .blue  .card-header { background: #eff6ff; }
+        .blue  .card-header .icon { background: #dbeafe; }
+        .blue  .card-header h2 { color: #1d4ed8; }
+
+        .green .card-header { background: #f0fdf4; }
+        .green .card-header .icon { background: #dcfce7; }
+        .green .card-header h2 { color: #15803d; }
+
+        .gray  .card-header { background: #f8fafc; }
+        .gray  .card-header .icon { background: #f1f5f9; }
+        .gray  .card-header h2 { color: #1e3a5f; }
+
+        .card-body { padding: 1.5rem 2rem; }
+
+        .url-box {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.85rem 1.2rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .url-box .label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+        .url-box a { font-size: 0.85rem; font-weight: 700; color: #2563eb; word-break: break-all; text-decoration: none; }
+        .url-box a:hover { text-decoration: underline; }
+
+        .pw-box {
+            background: #fef9c3;
+            border: 2px solid #fde047;
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .pw-box .pw-label { font-size: 0.75rem; font-weight: 700; color: #92400e; }
+        .pw-box .pw-value { font-size: 1.6rem; font-weight: 900; color: #78350f; letter-spacing: 0.1em; }
+
+        .steps { list-style: none; }
+        .steps li {
+            display: flex;
+            gap: 0.85rem;
+            align-items: flex-start;
+            padding: 0.55rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.875rem;
+        }
+        .steps li:last-child { border-bottom: none; }
+        .steps .num {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700;
+            flex-shrink: 0; margin-top: 1px;
+        }
+        .blue  .num { background: #dbeafe; color: #1d4ed8; }
+        .green .num { background: #dcfce7; color: #15803d; }
+        .gray  .num { background: #e2e8f0; color: #475569; }
+
+        .steps .text { color: #374151; line-height: 1.55; }
+        .steps .sub  { font-size: 0.78rem; color: #9ca3af; margin-top: 0.15rem; }
+
+        .note {
+            background: #fff7ed;
+            border-left: 3px solid #fb923c;
+            border-radius: 0 8px 8px 0;
+            padding: 0.75rem 1rem;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #9a3412;
+            line-height: 1.6;
+        }
+
+        .divider { height: 1px; background: #f1f5f9; margin: 1rem 0; }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #9ca3af;
+            font-size: 0.8rem;
+            line-height: 1.8;
+        }
+
+        .print-btn {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .print-btn button {
+            background: #1e3a5f;
+            color: white;
+            border: none;
+            padding: 0.65rem 2rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .print-btn button:hover { background: #1e40af; }
+
+        @media print {
+            body { background: white; }
+            header { background: #1e3a5f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-btn { display: none; }
+            .card { box-shadow: none; border: 1.5px solid #e5e7eb; }
+            .blue  .card-header { background: #eff6ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .green .card-header { background: #f0fdf4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .gray  .card-header { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .pw-box { background: #fef9c3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="badge">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단</div>
+    <h1>시스템 사용 안내</h1>
+    <p>재단법인 부산테크노파크 · DX 역량진단 시스템 v2</p>
+</header>
+
+<div class="container">
+
+    <div class="print-btn">
+        <button onclick="window.print()">🖨️ 이 페이지 인쇄 (보관용)</button>
+    </div>
+
+    <!-- 기업 자가진단 -->
+    <div class="card blue">
+        <div class="card-header">
+            <div class="icon">🏢</div>
+            <div>
+                <h2>① 기업 자가진단</h2>
+                <p>신청 기업 대표자 또는 담당자가 직접 사용 · 약 5분 소요</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="url-box">
+                <span class="label">URL</span>
+                <a href="https://iloom50-commits.github.io/busan-fashion-dx/v2/" target="_blank">
+                    https://iloom50-commits.github.io/busan-fashion-dx/v2/
+                </a>
+            </div>
+            <ul class="steps">
+                <li>
+                    <span class="num">1</span>
+                    <div class="text">위 URL에 접속합니다<div class="sub">PC·스마트폰·태블릿 모두 가능 / 별도 설치 불필요</div></div>
+                </li>
+                <li>
+                    <span class="num">2</span>
+                    <div class="text">기업 정보를 입력합니다<div class="sub">기업명, 대표자명, 종업원 수, 주요 매출 형태 선택</div></div>
+                </li>
+                <li>
+                    <span class="num">3</span>
+                    <div class="text">기업 유형(Track A / B / C)을 선택합니다<div class="sub">임가공·수주 → Track B 권장 / 자체 브랜드 → Track A / 복합 → Track C</div></div>
+                </li>
+                <li>
+                    <span class="num">4</span>
+                    <div class="text">6개 영역을 3단계로 평가합니다<div class="sub">미도입 / 일부 도입 / 적극 활용 중 선택</div></div>
+                </li>
+                <li>
+                    <span class="num">5</span>
+                    <div class="text">결과를 확인하고 PDF 출력 또는 저장합니다<div class="sub">결과는 부산테크노파크에 자동 전송됩니다</div></div>
+                </li>
+            </ul>
+            <div class="note">
+                ※ 자가진단 결과는 참고 자료이며, 이후 전문가 현장 진단 시 보다 정밀한 평가가 이루어집니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- 전문가 진단 -->
+    <div class="card green">
+        <div class="card-header">
+            <div class="icon">👨‍💼</div>
+            <div>
+                <h2>② 전문가 현장 진단</h2>
+                <p>컨설턴트가 현장 방문 후 사용 · 약 20~30분 소요</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="url-box">
+                <span class="label">URL</span>
+                <a href="https://iloom50-commits.github.io/busan-fashion-dx/v2/expert.html" target="_blank">
+                    https://iloom50-commits.github.io/busan-fashion-dx/v2/expert.html
+                </a>
+            </div>
+            <ul class="steps">
+                <li>
+                    <span class="num">1</span>
+                    <div class="text">현장 방문 전 위 URL을 노트북·태블릿에 미리 열어둡니다</div>
+                </li>
+                <li>
+                    <span class="num">2</span>
+                    <div class="text">기업 유형(Track)을 선택하고 기본 정보를 입력합니다<div class="sub">기업명, 대표자, 종업원 수, 사업자번호</div></div>
+                </li>
+                <li>
+                    <span class="num">3</span>
+                    <div class="text">현장 사진을 촬영·업로드합니다<div class="sub">전경 사진, 주요 애로사항 사진 (건너뛰기 가능)</div></div>
+                </li>
+                <li>
+                    <span class="num">4</span>
+                    <div class="text">6개 영역을 5점 척도로 평가합니다<div class="sub">각 영역에서 근본 원인 분석 및 추천 솔루션도 선택</div></div>
+                </li>
+                <li>
+                    <span class="num">5</span>
+                    <div class="text">이행 로드맵을 확인·조정합니다<div class="sub">단기(3개월) · 중기(6개월) · 장기(1년+) 과제 배분</div></div>
+                </li>
+                <li>
+                    <span class="num">6</span>
+                    <div class="text">전문가 종합의견을 작성합니다</div>
+                </li>
+                <li>
+                    <span class="num">7</span>
+                    <div class="text">최종 리포트를 발행(PDF 출력)합니다<div class="sub">결과는 부산테크노파크에 자동 저장됩니다</div></div>
+                </li>
+            </ul>
+            <div class="note">
+                ※ 전문가 진단 URL은 컨설턴트에게만 공유하세요. 기업에게는 자가진단 URL(①)을 안내합니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- 관리자 대시보드 -->
+    <div class="card gray">
+        <div class="card-header">
+            <div class="icon">📊</div>
+            <div>
+                <h2>③ 관리자 대시보드</h2>
+                <p>부산테크노파크 담당자 전용 · 전체 진단 결과 조회·관리</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="url-box">
+                <span class="label">URL</span>
+                <a href="https://iloom50-commits.github.io/busan-fashion-dx/v2/admin.html" target="_blank">
+                    https://iloom50-commits.github.io/busan-fashion-dx/v2/admin.html
+                </a>
+            </div>
+
+            <div class="pw-box">
+                <div>
+                    <div class="pw-label">🔐 관리자 비밀번호</div>
+                    <div class="pw-value">busan2026</div>
+                </div>
+                <div style="font-size:0.75rem; color:#92400e; line-height:1.6; margin-left:auto;">
+                    이 페이지를 인쇄하여<br>안전한 곳에 보관하세요
+                </div>
+            </div>
+
+            <ul class="steps">
+                <li>
+                    <span class="num">1</span>
+                    <div class="text">위 URL 접속 후 비밀번호를 입력합니다</div>
+                </li>
+                <li>
+                    <span class="num">2</span>
+                    <div class="text">전체 진단 현황을 확인합니다<div class="sub">자가진단 / 전문가진단 건수, 이번 달 진단 수, 등급 분포, 영역별 평균 점수</div></div>
+                </li>
+                <li>
+                    <span class="num">3</span>
+                    <div class="text">필터로 원하는 결과를 검색합니다<div class="sub">유형(자가/전문가), Track(A/B/C), 등급(LV1~5) 필터 조합 가능</div></div>
+                </li>
+                <li>
+                    <span class="num">4</span>
+                    <div class="text">CSV 내보내기로 엑셀 파일을 저장합니다<div class="sub">필터 적용 상태 그대로 내보내기 가능</div></div>
+                </li>
+            </ul>
+            <div class="note">
+                ※ 관리자 대시보드 URL과 비밀번호는 외부에 공유하지 마세요.<br>
+                ※ 비밀번호 변경이 필요하면 담당 개발자에게 요청하세요.
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    재단법인 부산테크노파크 · 2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 시스템<br>
+    문의: 부산테크노파크 담당부서
+</footer>
+
+</body>
+</html>
