@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 부산 패션 소공인 DX 진단 시스템 v2</title>
+    <title>기업 자가진단 | 부산 패션 소공인 DX 진단</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -30,32 +30,12 @@
 
         .q-header { background: #f8fafc; padding: 1.75rem 2rem; border-bottom: 1px solid #f1f5f9; }
 
-        /* 자가진단 3단계 카드 */
         .tri-btn { border: 2px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0.75rem; cursor: pointer; transition: all 0.15s; text-align: center; font-size: 0.78rem; font-weight: 600; color: #6b7280; }
         .tri-btn:hover { border-color: #93c5fd; background: #f0f9ff; color: #1d4ed8; }
         .tri-btn.sel-0 { border-color: #f87171; background: #fff5f5; color: #dc2626; }
         .tri-btn.sel-1 { border-color: #fb923c; background: #fff7ed; color: #ea580c; }
         .tri-btn.sel-2 { border-color: #34d399; background: #f0fdf4; color: #16a34a; }
 
-        /* 솔루션 체크카드 */
-        .sol-card { border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; cursor: pointer; transition: all 0.15s; }
-        .sol-card:hover { border-color: #93c5fd; background: #f0f9ff; }
-        .sol-card.checked { border-color: #2563eb; background: #eff6ff; }
-        .sol-card .check-box { width: 18px; height: 18px; border: 2px solid #d1d5db; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; transition: all 0.15s; }
-        .sol-card.checked .check-box { background: #2563eb; border-color: #2563eb; color: white; }
-
-        /* 로드맵 */
-        .roadmap-col { border: 2px dashed #e2e8f0; border-radius: 10px; padding: 0.75rem; min-height: 120px; }
-        .roadmap-item { background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.75rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-        .roadmap-item:hover { border-color: #f87171; }
-
-        /* 모드 카드 */
-        .mode-card { border: 2px solid #e2e8f0; border-radius: 16px; padding: 2rem; cursor: pointer; transition: all 0.25s; }
-        .mode-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.1); }
-        .mode-card.self:hover   { border-color: #3b82f6; }
-        .mode-card.expert:hover { border-color: #16a34a; }
-
-        /* 세그먼트 카드 */
         .seg-card { border: 2px solid #e2e8f0; border-radius: 9px; padding: 0.65rem; cursor: pointer; transition: all 0.15s; text-align: center; }
         .seg-card:hover    { border-color: #93c5fd; background: #f0f9ff; }
         .seg-card.selected { border-color: #2563eb; background: #eff6ff; }
@@ -81,17 +61,16 @@
 <header>
     <div class="flex items-center gap-2">
         <span class="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-xs font-bold">DX</span>
-        <span class="font-bold text-lg tracking-tight">부산 패션 소공인 진단 시스템</span>
-        <span class="text-blue-300 text-xs ml-1">v2</span>
+        <span class="font-bold text-lg tracking-tight">부산 패션 소공인 DX 진단</span>
     </div>
     <div class="flex items-center gap-2 text-sm">
         <span id="hd-company" class="font-bold text-white hidden"></span>
-        <span id="hd-mode"    class="px-2 py-0.5 rounded text-xs font-bold hidden"></span>
-        <span id="hd-track"   class="bg-blue-600 px-2 py-0.5 rounded text-xs hidden"></span>
+        <span class="bg-blue-600 px-2 py-0.5 rounded text-xs font-bold">기업 자가진단</span>
+        <span id="hd-track" class="bg-blue-800 px-2 py-0.5 rounded text-xs hidden"></span>
     </div>
 </header>
 
-<div id="progress-bar-container" class="hidden">
+<div id="progress-bar-container">
     <div class="max-w-4xl mx-auto flex justify-between w-full px-4" id="stepper-row"></div>
 </div>
 
@@ -100,11 +79,10 @@
         <div id="wiz" class="fade-in w-full"></div>
     </div>
 
-    <!-- 인쇄 영역 -->
     <div id="print-area" class="hidden w-full max-w-4xl mx-auto p-10">
         <div class="text-center border-b-2 border-gray-800 pb-5 mb-6">
-            <p id="rpt-type" class="text-xs text-gray-400 uppercase tracking-widest mb-1"></p>
-            <h1 id="rpt-title" class="text-3xl font-bold text-[#1e3a5f]">DX 역량 진단 결과보고서</h1>
+            <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">기업 자가진단</p>
+            <h1 class="text-3xl font-bold text-[#1e3a5f]">DX 역량 자가진단 결과보고서</h1>
             <p class="text-gray-400 text-sm mt-1">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</p>
         </div>
         <table class="w-full mb-6 border-t-2 border-gray-800 text-sm"><tbody id="rpt-info"></tbody></table>
@@ -119,15 +97,11 @@
             </div>
             <p id="rpt-comment" class="text-sm text-gray-700 leading-relaxed border-t pt-3 mt-2"></p>
         </div>
-        <div id="rpt-roadmap-section" class="hidden page-break">
-            <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-blue-500 pl-3 mb-4">이행 로드맵</h3>
-            <div class="grid grid-cols-3 gap-4 mb-6" id="rpt-roadmap"></div>
-        </div>
         <div>
             <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-red-500 pl-3 mb-4">맞춤형 기술 수요 (RFP)</h3>
             <div id="rpt-rfp" class="space-y-3"></div>
         </div>
-        <div id="rpt-next" class="mt-8 hidden">
+        <div class="mt-8">
             <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-green-500 pl-3 mb-3">다음 단계: 전문가 컨설팅 연계</h3>
             <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
                 <p class="font-bold mb-1">자가진단 결과를 바탕으로 전문가 컨설팅을 신청하시면 맞춤형 이행 로드맵을 제공받을 수 있습니다.</p>
@@ -138,7 +112,6 @@
 </main>
 
 <script>
-// ===== 데이터 =====
 const DATA = {
     tracks: {
         A: { icon:'🎨', title:'외주형 브랜드',  desc:'디자인 중심 / 생산 외주' },
@@ -163,20 +136,6 @@ const DATA = {
         basic:    { A:'판매 전략 데이터 활용',    B:'생산 계획 데이터 활용',     C:'전사 의사결정 방식' },
         leader:   { A:'대표자 의지 및 관심도',    B:'대표자 의지 및 관심도',     C:'대표자 의지 및 관심도' }
     },
-    expertOpts: [
-        { val:1, text:'구두/전화 위주 (기록 없음)' },
-        { val:2, text:'수기 장부/화이트보드' },
-        { val:3, text:'엑셀(Excel) 및 메신저 공유' },
-        { val:4, text:'클라우드/협업툴 실시간 공유' },
-        { val:5, text:'ERP/MES 시스템 연동' }
-    ],
-    leaderOpts: [
-        { val:1, text:'관심 없음' },
-        { val:2, text:'필요성은 느끼나 계획 없음' },
-        { val:3, text:'관심 있음 (교육 참석)' },
-        { val:4, text:'적극적 의지 (예산 배정)' },
-        { val:5, text:'강력한 의지 (직접 주도)' }
-    ],
     solutions: {
         work: [
             { id:'w1', name:'카카오워크·슬랙 공유',    budget:'무료~월 1만',  phase:'short', desc:'메신저 기반 작업지시 공유' },
@@ -210,14 +169,6 @@ const DATA = {
             { id:'l3', name:'사내 DX 추진체계 구축',  budget:'내부 인력',     phase:'long',  desc:'DX 담당자 지정·추진위 운영' }
         ]
     },
-    causes: {
-        work:     ['구두 전달 관행 고착','양식 표준화 미비','IT 도구 활용 미숙','인력 부족으로 기록 생략'],
-        process:  ['공정 가시화 수단 부재','실시간 진도 파악 어려움','담당자 간 소통 단절','데이터 수집 체계 없음'],
-        quality:  ['불량 기록 번거로움','품질 기준 문서화 미비','이력 추적 수단 부재','고객 클레임 데이터 미활용'],
-        material: ['수기 장부 의존','실시간 재고 파악 불가','발주 기준 없음','원부자재 낭비 발생'],
-        basic:    ['데이터 수집 자체 없음','의사결정 경험 의존','경영 현황 파악 지연','디지털 도구 교육 부족'],
-        leader:   ['DX 투자 우선순위 낮음','ROI 불확실성 우려','전담 인력 부재','성공 사례 정보 부족']
-    },
     autoComments: {
         5:'귀사는 디지털 전환의 선도적 위치에 있습니다. ERP·MES 등 시스템을 적극 활용하고 데이터 기반 의사결정 문화가 정착되어 있습니다. AI·빅데이터 연계 등 고도화를 검토해보시기 바랍니다.',
         4:'귀사는 디지털 도구를 적극 활용하는 고도화 단계입니다. 일부 영역 추가 디지털화를 통해 선도 기업으로 도약이 가능합니다.',
@@ -227,109 +178,39 @@ const DATA = {
     }
 };
 
-// ===== 스텝퍼 =====
-const STEPS_SELF = [
+const STEPS = [
     { s:'self-info', label:'기업정보' },
     { s:0,           label:'유형선택' },
     { s:'self-diag', label:'자가진단' },
     { s:'result',    label:'결과' }
 ];
-const STEPS_EXPERT = [
-    { s:0,         label:'유형선택' },
-    { s:1,         label:'기본정보' },
-    { s:2,         label:'현장사진' },
-    { s:3,         label:'작업지시' },
-    { s:4,         label:'공정관리' },
-    { s:5,         label:'품질관리' },
-    { s:6,         label:'자재관리' },
-    { s:7,         label:'기초역량' },
-    { s:8,         label:'DX리더십' },
-    { s:'roadmap', label:'로드맵' },
-    { s:'opinion', label:'종합의견' },
-    { s:'result',  label:'결과' }
-];
 
-// ===== 상태 =====
 let state = {
-    mode:null, step:'landing', track:null,
-    info:{}, selfScores:{}, scores:{}, causes:{}, solutions:{},
-    roadmap:{ short:[], mid:[], long:[], _built:false },
-    opinion:'', grade:null
+    step:'self-info', track:null,
+    info:{}, selfScores:{}, grade:null
 };
 let charts = {};
 
-// ===== 스텝퍼 =====
 function updateStepper() {
-    const bar = document.getElementById('progress-bar-container');
-    const row = document.getElementById('stepper-row');
-    if (!state.mode) { bar.classList.add('hidden'); return; }
-    bar.classList.remove('hidden');
-    const steps = state.mode === 'self' ? STEPS_SELF : STEPS_EXPERT;
-    const cur   = steps.findIndex(s => s.s === state.step);
-    row.innerHTML = steps.map((s,i) => `
+    const cur = STEPS.findIndex(s => s.s === state.step);
+    document.getElementById('stepper-row').innerHTML = STEPS.map((s,i) => `
         <div class="stepper-item ${i<cur?'completed':i===cur?'active':''}">
             <div class="stepper-circle">${i<cur?'✓':i+1}</div>
             <div class="stepper-label">${s.label}</div>
         </div>`).join('');
 }
 
-// ===== 렌더 =====
 function render() {
     updateStepper();
     const el = document.getElementById('wiz');
     el.className = 'fade-in w-full';
     void el.offsetWidth;
-    const map = { 'landing':renderLanding, 'self-info':renderSelfInfo, 'self-diag':renderSelfDiag,
-                  'roadmap':renderRoadmap, 'opinion':renderOpinion, 'result':renderResult };
-    if (map[state.step])                          map[state.step](el);
-    else if (state.step === 0)                    renderTrack(el);
-    else if (state.step === 1)                    renderExpertInfo(el);
-    else if (state.step === 2)                    renderPhoto(el);
-    else if (state.step >= 3 && state.step <= 8) renderExpertDiag(el);
+    if      (state.step === 'self-info') renderSelfInfo(el);
+    else if (state.step === 0)           renderTrack(el);
+    else if (state.step === 'self-diag') renderSelfDiag(el);
+    else if (state.step === 'result')    renderResult(el);
 }
 
-// ===== 랜딩 =====
-function renderLanding(el) {
-    el.innerHTML = `
-    <div class="p-8 md:p-10">
-        <div class="text-center mb-10">
-            <span class="inline-block bg-blue-50 text-blue-700 text-xs font-bold px-4 py-1.5 rounded-full mb-4">
-                2026 부산 패션(봉제) 소공인 디지털 전환 역량진단
-            </span>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">DX 역량 진단 시스템</h1>
-            <p class="text-gray-400 text-sm">진단 방식을 선택해주세요</p>
-        </div>
-        <div class="grid grid-cols-2 gap-6 max-w-2xl mx-auto">
-            <div onclick="startMode('self')" class="mode-card self">
-                <div class="text-5xl text-center mb-4">🏢</div>
-                <h2 class="text-xl font-bold text-center text-gray-900 mb-1">기업 자가진단</h2>
-                <p class="text-xs text-gray-400 text-center mb-5">대표자·담당자가 직접 진단 (약 5분)</p>
-                <ul class="text-xs text-gray-600 space-y-2 mb-6">
-                    <li class="flex gap-2"><span class="text-blue-500 font-bold">✓</span>6개 영역 3단계 간편 평가</li>
-                    <li class="flex gap-2"><span class="text-blue-500 font-bold">✓</span>현재 디지털 수준 즉시 파악</li>
-                    <li class="flex gap-2"><span class="text-blue-500 font-bold">✓</span>결과보고서 PDF 출력</li>
-                    <li class="flex gap-2"><span class="text-blue-500 font-bold">✓</span>전문가 컨설팅 연계 안내</li>
-                </ul>
-                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm transition-all">자가진단 시작하기 →</button>
-            </div>
-            <div onclick="startMode('expert')" class="mode-card expert">
-                <div class="text-5xl text-center mb-4">👨‍💼</div>
-                <h2 class="text-xl font-bold text-center text-gray-900 mb-1">전문가 진단</h2>
-                <p class="text-xs text-gray-400 text-center mb-5">컨설턴트 현장 방문 후 사용</p>
-                <ul class="text-xs text-gray-600 space-y-2 mb-6">
-                    <li class="flex gap-2"><span class="text-green-500 font-bold">✓</span>5점 척도 정밀 평가</li>
-                    <li class="flex gap-2"><span class="text-green-500 font-bold">✓</span>영역별 근본 원인 분석</li>
-                    <li class="flex gap-2"><span class="text-green-500 font-bold">✓</span>맞춤 솔루션·예산 선택</li>
-                    <li class="flex gap-2"><span class="text-green-500 font-bold">✓</span>단기·중기·장기 이행 로드맵</li>
-                </ul>
-                <button class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold text-sm transition-all">전문가 진단 시작하기 →</button>
-            </div>
-        </div>
-        <p class="text-center text-xs text-gray-300 mt-10">재단법인 부산테크노파크 · 2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단</p>
-    </div>`;
-}
-
-// ===== 자가진단: 기업정보 =====
 function renderSelfInfo(el) {
     const i = state.info;
     const seg = (key, val, icon, label) => {
@@ -338,7 +219,11 @@ function renderSelfInfo(el) {
             <div class="seg-icon">${icon}</div><div class="seg-label">${label}</div></div>`;
     };
     el.innerHTML = `
-    <div class="q-header"><h2 class="text-xl font-bold">기업 정보</h2><p class="text-sm text-gray-400 mt-1">간단히 입력해주세요</p></div>
+    <div class="q-header">
+        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">STEP 1</div>
+        <h2 class="text-xl font-bold">기업 정보 입력</h2>
+        <p class="text-sm text-gray-400 mt-1">간단히 입력해주세요 (약 1분)</p>
+    </div>
     <div class="p-6 space-y-5">
         <div class="grid grid-cols-2 gap-3">
             <div><label class="block text-xs font-bold text-gray-500 mb-1">기업명 <span class="text-red-500">*</span></label>
@@ -362,16 +247,41 @@ function renderSelfInfo(el) {
             </div>
         </div>
     </div>
-    <div class="px-6 py-4 border-t flex justify-between">
-        <button onclick="goLanding()" class="text-sm text-gray-400">← 처음으로</button>
+    <div class="px-6 py-4 border-t flex justify-end">
         <button onclick="saveSelfInfo()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl font-bold text-sm">다음 →</button>
     </div>`;
 }
 
-// ===== 자가진단: 6영역 한 화면 =====
+function renderTrack(el) {
+    const bt  = state.info.biz_type;
+    const sug = bt==='임가공(수주)'?'B':bt==='자체 브랜드'?'A':bt==='복합 운영'?'C':null;
+    el.innerHTML = `
+    <div class="q-header text-center">
+        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2">STEP 2</div>
+        <h2 class="text-2xl font-bold text-gray-800">기업 유형을 선택해주세요</h2>
+        <p class="text-gray-400 text-sm mt-1">유형에 따라 진단 문항이 맞춤 설정됩니다</p>
+        ${sug?`<div class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-bold mt-3">💡 Track ${sug} 권장</div>`:''}
+    </div>
+    <div class="p-8 grid grid-cols-3 gap-4">
+        ${Object.keys(DATA.tracks).map(k => {
+            const rec = k===sug;
+            return `<div onclick="setTrack('${k}')" class="relative border-2 ${rec?'border-blue-300 bg-blue-50':'border-gray-200'} rounded-xl p-6 text-center cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all group">
+                ${rec?'<span class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">권장</span>':''}
+                <div class="text-4xl mb-3">${DATA.tracks[k].icon}</div>
+                <div class="font-bold text-blue-700 text-sm">Track ${k}</div>
+                <div class="font-bold text-gray-800 mt-1">${DATA.tracks[k].title}</div>
+                <p class="text-xs text-gray-500 mt-2">${DATA.tracks[k].desc}</p>
+                <div class="mt-4 text-xs text-blue-600 font-bold opacity-0 group-hover:opacity-100">선택하기 →</div>
+            </div>`;
+        }).join('')}
+    </div>
+    <div class="px-8 pb-4"><button onclick="prev()" class="text-gray-400 text-sm">← 이전</button></div>`;
+}
+
 function renderSelfDiag(el) {
     el.innerHTML = `
     <div class="q-header">
+        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">STEP 3</div>
         <h2 class="text-xl font-bold">6개 영역 자가진단</h2>
         <p class="text-sm text-gray-400 mt-1">각 영역에서 현재 귀사 상황에 가장 가까운 단계를 선택해주세요</p>
     </div>
@@ -399,230 +309,8 @@ function renderSelfDiag(el) {
     </div>`;
 }
 
-// ===== Track 선택 =====
-function renderTrack(el) {
-    const bt  = state.info.biz_type;
-    const sug = bt==='임가공(수주)'?'B':bt==='자체 브랜드'?'A':bt==='복합 운영'?'C':null;
-    el.innerHTML = `
-    <div class="q-header text-center">
-        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2">기업 유형 선택</div>
-        <h2 class="text-2xl font-bold text-gray-800">기업 유형을 선택해주세요</h2>
-        <p class="text-gray-400 text-sm mt-1">유형에 따라 진단 문항이 맞춤 설정됩니다</p>
-        ${sug&&state.mode==='self'?`<div class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-bold mt-3">💡 Track ${sug} 권장</div>`:''}
-    </div>
-    <div class="p-8 grid grid-cols-3 gap-4">
-        ${Object.keys(DATA.tracks).map(k => {
-            const rec = k===sug&&state.mode==='self';
-            return `<div onclick="setTrack('${k}')" class="relative border-2 ${rec?'border-blue-300 bg-blue-50':'border-gray-200'} rounded-xl p-6 text-center cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all group">
-                ${rec?'<span class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">권장</span>':''}
-                <div class="text-4xl mb-3">${DATA.tracks[k].icon}</div>
-                <div class="font-bold text-blue-700 text-sm">Track ${k}</div>
-                <div class="font-bold text-gray-800 mt-1">${DATA.tracks[k].title}</div>
-                <p class="text-xs text-gray-500 mt-2">${DATA.tracks[k].desc}</p>
-                <div class="mt-4 text-xs text-blue-600 font-bold opacity-0 group-hover:opacity-100">선택하기 →</div>
-            </div>`;
-        }).join('')}
-    </div>
-    <div class="px-8 pb-4"><button onclick="prev()" class="text-gray-400 text-sm">← 뒤로가기</button></div>`;
-}
-
-// ===== 전문가: 기본정보 =====
-function renderExpertInfo(el) {
-    const i = state.info;
-    el.innerHTML = `
-    <div class="q-header"><h2 class="text-xl font-bold">기본 정보</h2></div>
-    <div class="p-8 space-y-4 max-w-lg mx-auto">
-        <div><label class="block text-xs font-bold text-gray-500 mb-1">기업명 <span class="text-red-500">*</span></label>
-            <input id="ei-comp" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.comp||''}" placeholder="(주)부산봉제"></div>
-        <div><label class="block text-xs font-bold text-gray-500 mb-1">대표자</label>
-            <input id="ei-ceo" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.ceo||''}"></div>
-        <div class="grid grid-cols-2 gap-3">
-            <div><label class="block text-xs font-bold text-gray-500 mb-1">종업원수</label>
-                <input id="ei-emp" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.emp||''}" placeholder="예) 8명"></div>
-            <div><label class="block text-xs font-bold text-gray-500 mb-1">사업자번호</label>
-                <input id="ei-biz" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.biz||''}"></div>
-        </div>
-        <div class="pt-4 flex justify-between">
-            <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
-            <button onclick="saveExpertInfo()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">다음 →</button>
-        </div>
-    </div>`;
-}
-
-// ===== 전문가: 현장사진 =====
-function renderPhoto(el) {
-    el.innerHTML = `
-    <div class="q-header"><h2 class="text-xl font-bold">현장 사진</h2>
-        <button onclick="next()" class="text-xs text-green-500 underline mt-1 block">건너뛰기</button></div>
-    <div class="p-8 grid grid-cols-2 gap-4">
-        ${[1,2].map(n=>`
-        <div onclick="document.getElementById('f${n}').click()" class="border-2 border-dashed rounded-xl h-44 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 relative">
-            <input type="file" id="f${n}" class="hidden" accept="image/*" onchange="loadPhoto(this,${n})">
-            <div id="ph-lbl-${n}" class="text-center"><div class="text-3xl mb-2">📷</div>
-                <span class="text-sm font-bold text-gray-400">${n===1?'현장 전경':'주요 애로사항'}</span></div>
-            <img id="ph-img-${n}" class="absolute inset-0 w-full h-full object-cover hidden rounded-xl">
-        </div>`).join('')}
-    </div>
-    <div class="px-8 pb-6 flex justify-between">
-        <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
-        <button onclick="next()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">다음 →</button>
-    </div>`;
-}
-
-// ===== 전문가: 영역별 진단 (고도화) =====
-function renderExpertDiag(el) {
-    const aIdx   = state.step - 3;
-    const area   = DATA.areas[aIdx];
-    const opts   = area.id==='leader' ? DATA.leaderOpts : DATA.expertOpts;
-    const curS   = state.scores[area.id];
-    const curC   = state.causes[area.id]    || [];
-    const curSol = state.solutions[area.id] || [];
-    const selfLv = state.selfScores[area.id];
-    const sols   = DATA.solutions[area.id];
-
-    el.innerHTML = `
-    <div class="q-header">
-        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">${area.icon} ${area.name} (${aIdx+1}/6)</div>
-        <h2 class="text-xl font-bold text-gray-800">${DATA.questions[area.id][state.track]}</h2>
-        ${selfLv!==undefined?`<div class="inline-flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1 rounded-full text-xs font-bold mt-2">
-            📋 자가진단: ${DATA.triLabels[selfLv]}</div>`:''}
-    </div>
-    <div class="p-5 space-y-5 overflow-y-auto" style="max-height:calc(100vh - 240px)">
-
-        <div>
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">전문가 평가 <span class="text-red-500">*</span></p>
-            <div class="space-y-2">
-                ${opts.map(o=>`
-                <div onclick="setScore('${area.id}',${o.val})" class="flex items-center p-3 border rounded-lg cursor-pointer transition-all ${curS===o.val?'border-green-500 bg-green-50':'border-gray-200 hover:border-green-300 hover:bg-gray-50'}">
-                    <div class="w-7 h-7 rounded-md flex items-center justify-center font-bold text-xs mr-3 flex-shrink-0 ${curS===o.val?'bg-green-600 text-white':'bg-gray-100 text-gray-500'}">${o.val}</div>
-                    <span class="text-sm font-medium text-gray-700">${o.text}</span>
-                </div>`).join('')}
-            </div>
-        </div>
-
-        <div>
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">근본 원인 분석 (복수 선택)</p>
-            <div class="grid grid-cols-2 gap-2">
-                ${DATA.causes[area.id].map(c=>{
-                    const sel = curC.includes(c);
-                    return `<div onclick="toggleCause('${area.id}','${c.replace(/'/g,"\\'")}')"
-                        class="text-xs border rounded-lg px-3 py-2 cursor-pointer transition-all ${sel?'border-orange-400 bg-orange-50 text-orange-700 font-bold':'border-gray-200 text-gray-600 hover:border-orange-300'}">
-                        ${sel?'✓ ':''}${c}</div>`;
-                }).join('')}
-            </div>
-        </div>
-
-        <div>
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">추천 솔루션 선택</p>
-            <div class="space-y-2">
-                ${sols.map(s=>{
-                    const sel = curSol.includes(s.id);
-                    const phL = s.phase==='short'?'단기':s.phase==='mid'?'중기':'장기';
-                    const phCls = s.phase==='short'?'text-green-600':s.phase==='mid'?'text-blue-600':'text-purple-600';
-                    return `<div onclick="toggleSolution('${area.id}','${s.id}')" class="sol-card ${sel?'checked':''}">
-                        <div class="flex items-start gap-3">
-                            <div class="check-box mt-0.5">${sel?'✓':''}</div>
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-sm font-bold text-gray-800">${s.name}</span>
-                                    <span class="text-xs font-bold ${phCls}">[${phL}]</span>
-                                </div>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span class="text-xs text-gray-500">${s.desc}</span>
-                                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold ml-auto flex-shrink-0">💰 ${s.budget}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-                }).join('')}
-            </div>
-        </div>
-
-    </div>
-    <div class="px-6 py-3 border-t flex justify-between">
-        <button onclick="prev()" class="text-gray-400 text-sm">← 뒤로가기</button>
-        <button onclick="next()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">${aIdx<5?'다음 영역 →':'로드맵 작성 →'}</button>
-    </div>`;
-}
-
-// ===== 전문가: 이행 로드맵 =====
-function renderRoadmap(el) {
-    // 선택된 솔루션 수집
-    const allSols = [];
-    DATA.areas.forEach(a => {
-        (state.solutions[a.id]||[]).forEach(id => {
-            const s = DATA.solutions[a.id].find(x=>x.id===id);
-            if (s) allSols.push({...s, areaName:a.name});
-        });
-    });
-
-    // 첫 진입 시 단계별 자동 배치
-    if (!state.roadmap._built) {
-        state.roadmap = { short:[], mid:[], long:[], _built:true };
-        allSols.forEach(s => state.roadmap[s.phase].push(s.id));
-    }
-
-    const allById = {};
-    allSols.forEach(s => allById[s.id] = s);
-
-    const phLabel = { short:'단기 (3개월 이내)', mid:'중기 (6개월)', long:'장기 (1년+)' };
-    const phBorder = { short:'border-green-300', mid:'border-blue-300', long:'border-purple-300' };
-    const phText   = { short:'text-green-700',   mid:'text-blue-700',   long:'text-purple-700' };
-
-    el.innerHTML = `
-    <div class="q-header">
-        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">🗺️ 이행 로드맵</div>
-        <h2 class="text-xl font-bold text-gray-800">단계별 추진 과제를 확인·조정하세요</h2>
-        <p class="text-gray-400 text-sm mt-1">항목을 클릭하면 단기→중기→장기 순으로 이동합니다</p>
-    </div>
-    <div class="p-5 overflow-y-auto" style="max-height:calc(100vh - 240px)">
-        <div class="grid grid-cols-3 gap-4">
-            ${['short','mid','long'].map(ph=>`
-            <div>
-                <div class="text-xs font-bold ${phText[ph]} mb-2 text-center">${phLabel[ph]}</div>
-                <div class="roadmap-col ${phBorder[ph]}">
-                    ${state.roadmap[ph].length===0
-                        ? '<p class="text-xs text-gray-300 text-center pt-4">선택된 항목 없음</p>'
-                        : state.roadmap[ph].map(id=>{
-                            const s=allById[id]; if(!s)return'';
-                            return `<div class="roadmap-item" onclick="moveRoadmapItem('${id}','${ph}')">
-                                <div><div class="font-bold text-gray-700 text-xs">${s.name}</div>
-                                    <div class="text-gray-400 text-xs">${s.areaName} · ${s.budget}</div></div>
-                                <span class="text-gray-300 text-xs ml-2">↕</span></div>`;
-                        }).join('')}
-                </div>
-            </div>`).join('')}
-        </div>
-    </div>
-    <div class="px-6 py-3 border-t flex justify-between">
-        <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
-        <button onclick="next()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">종합의견 작성 →</button>
-    </div>`;
-}
-
-// ===== 전문가: 종합의견 =====
-function renderOpinion(el) {
-    el.innerHTML = `
-    <div class="q-header">
-        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">📝 전문가 종합의견</div>
-        <h2 class="text-xl font-bold text-gray-800">진단 결과에 대한 종합 의견을 작성해주세요</h2>
-    </div>
-    <div class="p-6">
-        <textarea id="inp-opinion" class="w-full border border-gray-200 rounded-xl p-4 text-sm resize-none focus:border-green-500" rows="10"
-            placeholder="기업 현황에 대한 전문가 종합 의견을 자유롭게 작성해주세요.&#10;&#10;예) ○○ 기업은 봉제 공정 전반에서 수기 기반 업무가 많아 디지털 전환 효과가 클 것으로 판단됩니다...">${state.opinion}</textarea>
-    </div>
-    <div class="px-6 pb-6 flex justify-between">
-        <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
-        <button onclick="saveOpinion()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-2.5 rounded-xl font-bold text-sm">최종 리포트 발행 →</button>
-    </div>`;
-}
-
-// ===== 결과 =====
 function renderResult(el) {
-    const isSelf = state.mode === 'self';
-    const scoresObj = isSelf
-        ? Object.fromEntries(DATA.areas.map(a=>[a.id, DATA.triScore[state.selfScores[a.id]??0]]))
-        : state.scores;
+    const scoresObj = Object.fromEntries(DATA.areas.map(a=>[a.id, DATA.triScore[state.selfScores[a.id]??0]]));
     const sum = Object.values(scoresObj).reduce((a,b)=>a+b,0);
     const lv  = sum>=25?5:sum>=20?4:sum>=15?3:sum>=10?2:1;
     const gradeMap = {5:'LV5. 선도',4:'LV4. 고도화',3:'LV3. 정착',2:'LV2. 도입',1:'LV1. 기초'};
@@ -632,7 +320,7 @@ function renderResult(el) {
     el.innerHTML = `
     <div class="p-6">
         <div class="text-center mb-5">
-            <h2 class="text-2xl font-bold text-gray-800">진단 완료</h2>
+            <h2 class="text-2xl font-bold text-gray-800">자가진단 완료</h2>
             <div class="flex items-center justify-center gap-2 mt-1">
                 <span class="font-bold text-xl" style="color:${colorMap[lv]}">${gradeMap[lv]}</span>
                 <span class="text-gray-400">${sum} / 30점</span>
@@ -642,44 +330,26 @@ function renderResult(el) {
             <div class="border rounded-lg p-3"><canvas id="dash-radar" height="180"></canvas></div>
             <div class="border rounded-lg p-3"><canvas id="dash-bar" height="180"></canvas></div>
         </div>
-        ${isSelf ? `
         <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
             <p class="text-xs font-bold text-blue-500 mb-1">📋 진단 결과 요약</p>
             <p class="text-sm text-blue-800 leading-relaxed">${DATA.autoComments[lv]}</p>
         </div>
-        <div class="flex gap-3">
+        <div class="flex gap-3 mb-3">
             <button onclick="exportSelfResult()" class="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 py-3 rounded-lg font-bold text-sm transition-all">
                 💾 결과 저장 (전문가 연계용)
             </button>
             <button onclick="printSelfReport()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold text-sm transition-all">
                 📄 결과보고서 출력 (PDF)
             </button>
-        </div>` : `
-        <button onclick="printExpertReport()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow transition-all">
-            📄 전문가 진단 리포트 발행
-        </button>`}
+        </div>
+        <div class="text-center">
+            <button onclick="restart()" class="text-xs text-gray-400 underline">처음부터 다시 시작</button>
+        </div>
     </div>`;
     setTimeout(() => drawCharts('dash', state.grade.scores), 100);
 }
 
 // ===== 액션 =====
-function startMode(mode) {
-    state.mode = mode;
-    const hm = document.getElementById('hd-mode');
-    hm.innerText = mode==='self'?'자가진단':'전문가 진단';
-    hm.className = `px-2 py-0.5 rounded text-xs font-bold ${mode==='self'?'bg-blue-600':'bg-green-600'}`;
-    hm.classList.remove('hidden');
-    state.step = mode==='self'?'self-info':0;
-    render();
-}
-
-function goLanding() {
-    state = { mode:null, step:'landing', track:null, info:{}, selfScores:{}, scores:{}, causes:{}, solutions:{},
-              roadmap:{short:[],mid:[],long:[],_built:false}, opinion:'', grade:null };
-    ['hd-company','hd-mode','hd-track'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-    render();
-}
-
 function selInfo(key, val) {
     ['si-comp','si-ceo'].forEach(id=>{const e=document.getElementById(id);if(e)state.info[id.replace('si-','')]=e.value;});
     state.info[key] = val;
@@ -696,7 +366,7 @@ function saveSelfInfo() {
     state.info.comp=comp; state.info.ceo=ceo;
     document.getElementById('hd-company').innerText=comp;
     document.getElementById('hd-company').classList.remove('hidden');
-    next();
+    state.step=0; render();
 }
 
 function setSelfScore(id, idx) {
@@ -714,97 +384,21 @@ function setTrack(t) {
     state.track=t;
     document.getElementById('hd-track').innerText=`Track ${t}`;
     document.getElementById('hd-track').classList.remove('hidden');
-    next();
+    state.step='self-diag'; render();
 }
 
-function saveExpertInfo() {
-    const comp=document.getElementById('ei-comp').value.trim();
-    if(!comp){alert('기업명은 필수입니다.');return;}
-    state.info.comp=comp;
-    state.info.ceo=document.getElementById('ei-ceo').value.trim();
-    state.info.emp=document.getElementById('ei-emp').value.trim();
-    state.info.biz=document.getElementById('ei-biz').value.trim();
-    document.getElementById('hd-company').innerText=comp;
-    document.getElementById('hd-company').classList.remove('hidden');
-    next();
-}
-
-function loadPhoto(inp, n) {
-    if(!inp.files[0])return;
-    const r=new FileReader();
-    r.onload=e=>{
-        document.getElementById(`ph-img-${n}`).src=e.target.result;
-        document.getElementById(`ph-img-${n}`).classList.remove('hidden');
-        document.getElementById(`ph-lbl-${n}`).classList.add('hidden');
-    };
-    r.readAsDataURL(inp.files[0]);
-}
-
-function setScore(id, val) {
-    state.scores[id]=val;
-    renderExpertDiag(document.getElementById('wiz'));
-}
-
-function toggleCause(areaId, cause) {
-    if(!state.causes[areaId])state.causes[areaId]=[];
-    const idx=state.causes[areaId].indexOf(cause);
-    if(idx===-1)state.causes[areaId].push(cause);
-    else        state.causes[areaId].splice(idx,1);
-    renderExpertDiag(document.getElementById('wiz'));
-}
-
-function toggleSolution(areaId, solId) {
-    if(!state.solutions[areaId])state.solutions[areaId]=[];
-    const idx=state.solutions[areaId].indexOf(solId);
-    if(idx===-1)state.solutions[areaId].push(solId);
-    else        state.solutions[areaId].splice(idx,1);
-    renderExpertDiag(document.getElementById('wiz'));
-}
-
-function moveRoadmapItem(id, cur) {
-    const order=['short','mid','long'];
-    const nxt=order[(order.indexOf(cur)+1)%3];
-    state.roadmap[cur]=state.roadmap[cur].filter(x=>x!==id);
-    state.roadmap[nxt].push(id);
-    renderRoadmap(document.getElementById('wiz'));
-}
-
-function saveOpinion() {
-    const op=document.getElementById('inp-opinion').value.trim();
-    if(!op){alert('전문가 종합의견을 입력해주세요.');return;}
-    state.opinion=op;
-    next();
-}
-
-// ===== 네비게이션 =====
-function next() {
-    if(state.step==='result')return;
-    if(state.mode==='self'){
-        if     (state.step==='self-info') state.step=0;
-        else if(state.step===0)           state.step='self-diag';
-        else if(state.step==='self-diag') state.step='result';
-    } else {
-        if     (state.step===8)          state.step='roadmap';
-        else if(state.step==='roadmap')  state.step='opinion';
-        else if(state.step==='opinion')  state.step='result';
-        else                             state.step++;
-    }
+function restart() {
+    state = { step:'self-info', track:null, info:{}, selfScores:{}, grade:null };
+    document.getElementById('hd-company').classList.add('hidden');
+    document.getElementById('hd-track').classList.add('hidden');
     render();
 }
 
 function prev() {
-    if(state.mode==='self'){
-        if     (state.step==='self-info') {goLanding();return;}
-        else if(state.step===0)           state.step='self-info';
-        else if(state.step==='self-diag') state.step=0;
-        else if(state.step==='result')    state.step='self-diag';
-    } else {
-        if     (state.step===0)          {goLanding();return;}
-        else if(state.step==='roadmap')  state.step=8;
-        else if(state.step==='opinion')  state.step='roadmap';
-        else if(state.step==='result')   state.step='opinion';
-        else                             state.step--;
-    }
+    if     (state.step==='self-info') return;
+    else if(state.step===0)           state.step='self-info';
+    else if(state.step==='self-diag') state.step=0;
+    else if(state.step==='result')    state.step='self-diag';
     render();
 }
 
@@ -826,49 +420,6 @@ function drawCharts(prefix, scoresObj) {
     });
 }
 
-// ===== 인쇄 공통 =====
-function fillPrint(title, typeLabel, infoRows, comment, showRoadmap, showNext) {
-    document.getElementById('rpt-title').innerText   = title;
-    document.getElementById('rpt-type').innerText    = typeLabel;
-    document.getElementById('rpt-info').innerHTML    = infoRows;
-    document.getElementById('rpt-comment').innerText = comment;
-    const g=state.grade;
-    document.getElementById('rpt-grade').innerText   = `${g.txt}  (${Object.values(g.scores).reduce((a,b)=>a+b,0)}점 / 30점)`;
-
-    // RFP
-    const weak=DATA.areas.map(a=>({id:a.id,name:a.name,s:g.scores[a.id]||0})).sort((a,b)=>a.s-b.s).slice(0,3);
-    document.getElementById('rpt-rfp').innerHTML=weak.map(w=>`
-        <div class="border rounded-lg p-4 bg-gray-50 flex items-center gap-3">
-            <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold whitespace-nowrap">${w.name} ${w.s}점</span>
-            <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
-        </div>`).join('');
-
-    // 로드맵
-    if(showRoadmap){
-        document.getElementById('rpt-roadmap-section').classList.remove('hidden');
-        const allById={};
-        DATA.areas.forEach(a=>DATA.solutions[a.id].forEach(s=>allById[s.id]=s));
-        const phL={short:'단기 (3개월)',mid:'중기 (6개월)',long:'장기 (1년+)'};
-        const phC={short:'green',mid:'blue',long:'purple'};
-        document.getElementById('rpt-roadmap').innerHTML=['short','mid','long'].map(ph=>`
-            <div class="border-t-4 border-${phC[ph]}-400 rounded-lg p-4">
-                <h4 class="font-bold text-${phC[ph]}-700 text-sm mb-3">${phL[ph]}</h4>
-                ${(state.roadmap[ph]||[]).map(id=>{const s=allById[id];if(!s)return'';
-                    return `<div class="text-xs border rounded p-2 mb-2 bg-${phC[ph]}-50">
-                        <span class="font-bold">${s.name}</span> <span class="text-gray-500">· ${s.budget}</span></div>`;
-                }).join('')||'<p class="text-xs text-gray-300">항목 없음</p>'}
-            </div>`).join('');
-    } else {
-        document.getElementById('rpt-roadmap-section').classList.add('hidden');
-    }
-
-    showNext?document.getElementById('rpt-next').classList.remove('hidden')
-           :document.getElementById('rpt-next').classList.add('hidden');
-
-    setTimeout(()=>{drawCharts('rpt',g.scores);window.print();},500);
-}
-
-// ===== 자가진단 내보내기 =====
 function exportSelfResult() {
     const data=JSON.stringify({info:state.info,track:state.track,selfScores:state.selfScores,exportedAt:new Date().toISOString()});
     const a=document.createElement('a');
@@ -877,28 +428,25 @@ function exportSelfResult() {
     a.click();
 }
 
-// ===== 리포트 =====
 function printSelfReport() {
     const i=state.info;
-    fillPrint('DX 역량 자가진단 결과보고서','기업 자가진단',
+    const g=state.grade;
+    document.getElementById('rpt-info').innerHTML=
         `<tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold w-24">기업명</th><td class="px-3 text-sm">${i.comp}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold w-24">대표자</th><td class="px-3 text-sm">${i.ceo||'-'}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">종업원수</th><td class="px-3 text-sm">${i.emp||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">매출형태</th><td class="px-3 text-sm">${i.biz_type||'-'}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">기업유형</th><td class="px-3 text-sm" colspan="3">Track ${state.track} · ${DATA.tracks[state.track]?.title||''}</td></tr>
-         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm" colspan="3">${new Date().toLocaleDateString('ko-KR')}</td></tr>`,
-        DATA.autoComments[state.grade.lv], false, true);
+         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm" colspan="3">${new Date().toLocaleDateString('ko-KR')}</td></tr>`;
+    document.getElementById('rpt-grade').innerText=`${g.txt}  (${Object.values(g.scores).reduce((a,b)=>a+b,0)}점 / 30점)`;
+    document.getElementById('rpt-comment').innerText=DATA.autoComments[g.lv];
+    const weak=DATA.areas.map(a=>({id:a.id,name:a.name,s:g.scores[a.id]||0})).sort((a,b)=>a.s-b.s).slice(0,3);
+    document.getElementById('rpt-rfp').innerHTML=weak.map(w=>`
+        <div class="border rounded-lg p-4 bg-gray-50 flex items-center gap-3">
+            <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold whitespace-nowrap">${w.name} ${w.s}점</span>
+            <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
+        </div>`).join('');
+    setTimeout(()=>{drawCharts('rpt',g.scores);window.print();},500);
 }
 
-function printExpertReport() {
-    const i=state.info;
-    fillPrint('DX 역량 진단 결과보고서','전문가 현장 진단',
-        `<tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold w-24">기업명</th><td class="px-3 text-sm">${i.comp}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold w-24">대표자</th><td class="px-3 text-sm">${i.ceo||'-'}</td></tr>
-         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">종업원수</th><td class="px-3 text-sm">${i.emp||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">사업자번호</th><td class="px-3 text-sm">${i.biz||'-'}</td></tr>
-         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">기업유형</th><td class="px-3 text-sm" colspan="3">Track ${state.track} · ${DATA.tracks[state.track]?.title||''}</td></tr>
-         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm" colspan="3">${new Date().toLocaleDateString('ko-KR')}</td></tr>`,
-        state.opinion, true, false);
-}
-
-// ===== 시작 =====
 render();
 </script>
 </body>

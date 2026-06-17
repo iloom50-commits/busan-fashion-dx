@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전문가 진단 | 부산 패션 소공인 DX 진단</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; }
+        body { background: #f0f2f5; color: #1f2937; min-height: 100vh; display: flex; flex-direction: column; }
+
+        header { background: #14532d; color: white; padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 20; }
+
+        #progress-bar-container { background: white; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 10; }
+        .stepper-item { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+        .stepper-item::before { content: ''; position: absolute; top: 11px; left: -50%; width: 100%; height: 2px; background: #e5e7eb; z-index: -1; }
+        .stepper-item:first-child::before { display: none; }
+        .stepper-circle { width: 22px; height: 22px; border-radius: 50%; background: #e5e7eb; color: #9ca3af; font-size: 9px; font-weight: bold; display: flex; align-items: center; justify-content: center; z-index: 1; transition: all 0.3s; }
+        .stepper-label { font-size: 10px; margin-top: 3px; color: #9ca3af; font-weight: 500; white-space: nowrap; }
+        .stepper-item.active .stepper-circle { background: #16a34a; color: white; box-shadow: 0 0 0 3px #dcfce7; }
+        .stepper-item.active .stepper-label { color: #16a34a; font-weight: 700; }
+        .stepper-item.completed .stepper-circle { background: #10b981; color: white; }
+        .stepper-item.completed .stepper-label { color: #10b981; }
+        .stepper-item.completed::before { background: #10b981; }
+
+        main { flex: 1; display: flex; justify-content: center; padding: 1.5rem; }
+        #main-card { background: white; width: 100%; max-width: 860px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #e5e7eb; }
+
+        .q-header { background: #f0fdf4; padding: 1.75rem 2rem; border-bottom: 1px solid #dcfce7; }
+
+        .sol-card { border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; cursor: pointer; transition: all 0.15s; }
+        .sol-card:hover { border-color: #86efac; background: #f0fdf4; }
+        .sol-card.checked { border-color: #16a34a; background: #f0fdf4; }
+        .sol-card .check-box { width: 18px; height: 18px; border: 2px solid #d1d5db; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; transition: all 0.15s; }
+        .sol-card.checked .check-box { background: #16a34a; border-color: #16a34a; color: white; }
+
+        .roadmap-col { border: 2px dashed #e2e8f0; border-radius: 10px; padding: 0.75rem; min-height: 120px; }
+        .roadmap-item { background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.75rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .roadmap-item:hover { border-color: #f87171; }
+
+        .fade-in { animation: fadeIn 0.25s ease-out; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+
+        input:focus, textarea:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.1); }
+
+        @media print {
+            body { background: white; display: block; }
+            header, #progress-bar-container, #main-card, .no-print { display: none !important; }
+            #print-area { display: block !important; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="flex items-center gap-2">
+        <span class="w-6 h-6 bg-green-500 rounded flex items-center justify-center text-xs font-bold">DX</span>
+        <span class="font-bold text-lg tracking-tight">부산 패션 소공인 DX 진단</span>
+    </div>
+    <div class="flex items-center gap-2 text-sm">
+        <span id="hd-company" class="font-bold text-white hidden"></span>
+        <span class="bg-green-700 px-2 py-0.5 rounded text-xs font-bold">전문가 진단</span>
+        <span id="hd-track" class="bg-green-900 px-2 py-0.5 rounded text-xs hidden"></span>
+    </div>
+</header>
+
+<div id="progress-bar-container">
+    <div class="max-w-4xl mx-auto flex justify-between w-full px-4" id="stepper-row"></div>
+</div>
+
+<main>
+    <div id="main-card">
+        <div id="wiz" class="fade-in w-full"></div>
+    </div>
+
+    <div id="print-area" class="hidden w-full max-w-4xl mx-auto p-10">
+        <div class="text-center border-b-2 border-gray-800 pb-5 mb-6">
+            <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">전문가 현장 진단</p>
+            <h1 class="text-3xl font-bold text-[#14532d]">DX 역량 진단 결과보고서</h1>
+            <p class="text-gray-400 text-sm mt-1">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</p>
+        </div>
+        <table class="w-full mb-6 border-t-2 border-gray-800 text-sm"><tbody id="rpt-info"></tbody></table>
+        <div class="flex justify-between mb-6" style="height:220px">
+            <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">역량 균형도</h3><canvas id="rpt-radar"></canvas></div>
+            <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">영역별 점수</h3><canvas id="rpt-bar"></canvas></div>
+        </div>
+        <div class="bg-gray-50 p-5 rounded border mb-6">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="bg-green-900 text-white px-2 py-0.5 text-xs font-bold rounded">종합 등급</span>
+                <span id="rpt-grade" class="font-bold text-green-900"></span>
+            </div>
+            <p id="rpt-comment" class="text-sm text-gray-700 leading-relaxed border-t pt-3 mt-2"></p>
+        </div>
+        <div id="rpt-roadmap-section" class="page-break">
+            <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-green-500 pl-3 mb-4">이행 로드맵</h3>
+            <div class="grid grid-cols-3 gap-4 mb-6" id="rpt-roadmap"></div>
+        </div>
+        <div>
+            <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-red-500 pl-3 mb-4">맞춤형 기술 수요 (RFP)</h3>
+            <div id="rpt-rfp" class="space-y-3"></div>
+        </div>
+    </div>
+</main>
+
+<script>
+const DATA = {
+    tracks: {
+        A: { icon:'🎨', title:'외주형 브랜드',  desc:'디자인 중심 / 생산 외주' },
+        B: { icon:'🏭', title:'전문 제조사',     desc:'임가공 / 봉제 공장' },
+        C: { icon:'🏢', title:'통합 운영형',     desc:'자체 브랜드 + 제조' }
+    },
+    areas: [
+        { id:'work',     name:'작업지시',  icon:'📋' },
+        { id:'process',  name:'공정관리',  icon:'⚙️' },
+        { id:'quality',  name:'품질관리',  icon:'✅' },
+        { id:'material', name:'자재관리',  icon:'📦' },
+        { id:'basic',    name:'기초역량',  icon:'📊' },
+        { id:'leader',   name:'DX 리더십', icon:'👑' }
+    ],
+    questions: {
+        work:     { A:'외주처 발주서 전달 방식',  B:'현장 작업지시서 전달 방식', C:'통합 발주/작업지시 방식' },
+        process:  { A:'외주 생산 진도 파악',      B:'내부 공정 진행 확인',       C:'전사 생산 일정 관리' },
+        quality:  { A:'납품 불량 기록 방식',      B:'생산 불량 기록 방식',       C:'전사 품질 데이터 관리' },
+        material: { A:'샘플/원단 재고 관리',      B:'원부자재 수불 관리',        C:'통합 재고 관리' },
+        basic:    { A:'판매 전략 데이터 활용',    B:'생산 계획 데이터 활용',     C:'전사 의사결정 방식' },
+        leader:   { A:'대표자 의지 및 관심도',    B:'대표자 의지 및 관심도',     C:'대표자 의지 및 관심도' }
+    },
+    expertOpts: [
+        { val:1, text:'구두/전화 위주 (기록 없음)' },
+        { val:2, text:'수기 장부/화이트보드' },
+        { val:3, text:'엑셀(Excel) 및 메신저 공유' },
+        { val:4, text:'클라우드/협업툴 실시간 공유' },
+        { val:5, text:'ERP/MES 시스템 연동' }
+    ],
+    leaderOpts: [
+        { val:1, text:'관심 없음' },
+        { val:2, text:'필요성은 느끼나 계획 없음' },
+        { val:3, text:'관심 있음 (교육 참석)' },
+        { val:4, text:'적극적 의지 (예산 배정)' },
+        { val:5, text:'강력한 의지 (직접 주도)' }
+    ],
+    solutions: {
+        work: [
+            { id:'w1', name:'카카오워크·슬랙 공유',    budget:'무료~월 1만',  phase:'short', desc:'메신저 기반 작업지시 공유' },
+            { id:'w2', name:'QR코드 작업지시서',       budget:'50~150만',     phase:'short', desc:'QR스캔으로 작업내용 확인' },
+            { id:'w3', name:'모바일 작업관리 앱',      budget:'월 10~30만',   phase:'mid',   desc:'실시간 작업 배정·진행 관리' },
+            { id:'w4', name:'ERP 작업지시 모듈',       budget:'500만~',       phase:'long',  desc:'전사 통합 발주·작업 연동' }
+        ],
+        process: [
+            { id:'p1', name:'디지털 공정 현황판',      budget:'30~100만',     phase:'short', desc:'태블릿 기반 공정 가시화' },
+            { id:'p2', name:'바코드 공정 투입 관리',   budget:'100~300만',    phase:'mid',   desc:'바코드 스캔으로 공정 추적' },
+            { id:'p3', name:'MES(생산관리시스템)',     budget:'1,000만~',     phase:'long',  desc:'생산 전 공정 디지털 통합' }
+        ],
+        quality: [
+            { id:'q1', name:'불량 사진 기록 앱',       budget:'무료~월 5만',  phase:'short', desc:'스마트폰으로 불량 즉시 기록' },
+            { id:'q2', name:'품질이력 관리 시스템',    budget:'200~500만',    phase:'mid',   desc:'납품별 품질이력 추적·분석' },
+            { id:'q3', name:'통합 품질관리(QMS)',      budget:'1,000만~',     phase:'long',  desc:'불량 원인 분석·예방 시스템' }
+        ],
+        material: [
+            { id:'m1', name:'바코드·QR 재고관리',      budget:'50~200만',     phase:'short', desc:'입출고 바코드 스캔 관리' },
+            { id:'m2', name:'클라우드 자재관리',       budget:'월 10~30만',   phase:'mid',   desc:'실시간 재고·발주 현황 관리' },
+            { id:'m3', name:'ERP 자재·구매 모듈',     budget:'500만~',       phase:'long',  desc:'자재·생산·원가 통합 관리' }
+        ],
+        basic: [
+            { id:'b1', name:'클라우드 회계(더존 등)',  budget:'월 3~10만',    phase:'short', desc:'회계 디지털화·세금계산서 발행' },
+            { id:'b2', name:'경영 데이터 대시보드',    budget:'월 10~30만',   phase:'mid',   desc:'생산·매출 현황 실시간 시각화' },
+            { id:'b3', name:'ERP 통합 도입',          budget:'1,000만~',     phase:'long',  desc:'전사 경영정보 통합 관리' }
+        ],
+        leader: [
+            { id:'l1', name:'DX 입문 교육(집합·온라인)',budget:'무료~30만',   phase:'short', desc:'대표자 디지털 전환 마인드셋' },
+            { id:'l2', name:'DX 전략 컨설팅',         budget:'100~300만',    phase:'mid',   desc:'맞춤형 DX 추진 전략 수립' },
+            { id:'l3', name:'사내 DX 추진체계 구축',  budget:'내부 인력',     phase:'long',  desc:'DX 담당자 지정·추진위 운영' }
+        ]
+    },
+    causes: {
+        work:     ['구두 전달 관행 고착','양식 표준화 미비','IT 도구 활용 미숙','인력 부족으로 기록 생략'],
+        process:  ['공정 가시화 수단 부재','실시간 진도 파악 어려움','담당자 간 소통 단절','데이터 수집 체계 없음'],
+        quality:  ['불량 기록 번거로움','품질 기준 문서화 미비','이력 추적 수단 부재','고객 클레임 데이터 미활용'],
+        material: ['수기 장부 의존','실시간 재고 파악 불가','발주 기준 없음','원부자재 낭비 발생'],
+        basic:    ['데이터 수집 자체 없음','의사결정 경험 의존','경영 현황 파악 지연','디지털 도구 교육 부족'],
+        leader:   ['DX 투자 우선순위 낮음','ROI 불확실성 우려','전담 인력 부재','성공 사례 정보 부족']
+    }
+};
+
+const STEPS = [
+    { s:0,         label:'유형선택' },
+    { s:1,         label:'기본정보' },
+    { s:2,         label:'현장사진' },
+    { s:3,         label:'작업지시' },
+    { s:4,         label:'공정관리' },
+    { s:5,         label:'품질관리' },
+    { s:6,         label:'자재관리' },
+    { s:7,         label:'기초역량' },
+    { s:8,         label:'DX리더십' },
+    { s:'roadmap', label:'로드맵' },
+    { s:'opinion', label:'종합의견' },
+    { s:'result',  label:'결과' }
+];
+
+let state = {
+    step:0, track:null,
+    info:{}, scores:{}, causes:{}, solutions:{},
+    roadmap:{ short:[], mid:[], long:[], _built:false },
+    opinion:'', grade:null
+};
+let charts = {};
+
+function updateStepper() {
+    const cur = STEPS.findIndex(s => s.s === state.step);
+    document.getElementById('stepper-row').innerHTML = STEPS.map((s,i) => `
+        <div class="stepper-item ${i<cur?'completed':i===cur?'active':''}">
+            <div class="stepper-circle">${i<cur?'✓':i+1}</div>
+            <div class="stepper-label">${s.label}</div>
+        </div>`).join('');
+}
+
+function render() {
+    updateStepper();
+    const el = document.getElementById('wiz');
+    el.className = 'fade-in w-full';
+    void el.offsetWidth;
+    if      (state.step === 0)                    renderTrack(el);
+    else if (state.step === 1)                    renderExpertInfo(el);
+    else if (state.step === 2)                    renderPhoto(el);
+    else if (state.step >= 3 && state.step <= 8) renderExpertDiag(el);
+    else if (state.step === 'roadmap')            renderRoadmap(el);
+    else if (state.step === 'opinion')            renderOpinion(el);
+    else if (state.step === 'result')             renderResult(el);
+}
+
+function renderTrack(el) {
+    el.innerHTML = `
+    <div class="q-header text-center">
+        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-2">STEP 1</div>
+        <h2 class="text-2xl font-bold text-gray-800">기업 유형을 선택해주세요</h2>
+        <p class="text-gray-400 text-sm mt-1">유형에 따라 진단 문항이 맞춤 설정됩니다</p>
+    </div>
+    <div class="p-8 grid grid-cols-3 gap-4">
+        ${Object.keys(DATA.tracks).map(k => `
+            <div onclick="setTrack('${k}')" class="relative border-2 border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-green-500 hover:shadow-lg transition-all group">
+                <div class="text-4xl mb-3">${DATA.tracks[k].icon}</div>
+                <div class="font-bold text-green-700 text-sm">Track ${k}</div>
+                <div class="font-bold text-gray-800 mt-1">${DATA.tracks[k].title}</div>
+                <p class="text-xs text-gray-500 mt-2">${DATA.tracks[k].desc}</p>
+                <div class="mt-4 text-xs text-green-600 font-bold opacity-0 group-hover:opacity-100">선택하기 →</div>
+            </div>`).join('')}
+    </div>`;
+}
+
+function renderExpertInfo(el) {
+    const i = state.info;
+    el.innerHTML = `
+    <div class="q-header">
+        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">STEP 2</div>
+        <h2 class="text-xl font-bold">기본 정보</h2>
+    </div>
+    <div class="p-8 space-y-4 max-w-lg mx-auto">
+        <div><label class="block text-xs font-bold text-gray-500 mb-1">기업명 <span class="text-red-500">*</span></label>
+            <input id="ei-comp" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.comp||''}" placeholder="(주)부산봉제"></div>
+        <div><label class="block text-xs font-bold text-gray-500 mb-1">대표자</label>
+            <input id="ei-ceo" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.ceo||''}"></div>
+        <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-bold text-gray-500 mb-1">종업원수</label>
+                <input id="ei-emp" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.emp||''}" placeholder="예) 8명"></div>
+            <div><label class="block text-xs font-bold text-gray-500 mb-1">사업자번호</label>
+                <input id="ei-biz" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.biz||''}"></div>
+        </div>
+        <div class="pt-4 flex justify-between">
+            <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
+            <button onclick="saveExpertInfo()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">다음 →</button>
+        </div>
+    </div>`;
+}
+
+function renderPhoto(el) {
+    el.innerHTML = `
+    <div class="q-header">
+        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">STEP 3</div>
+        <h2 class="text-xl font-bold">현장 사진</h2>
+        <button onclick="next()" class="text-xs text-green-500 underline mt-1 block">건너뛰기</button>
+    </div>
+    <div class="p-8 grid grid-cols-2 gap-4">
+        ${[1,2].map(n=>`
+        <div onclick="document.getElementById('f${n}').click()" class="border-2 border-dashed rounded-xl h-44 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 relative">
+            <input type="file" id="f${n}" class="hidden" accept="image/*" onchange="loadPhoto(this,${n})">
+            <div id="ph-lbl-${n}" class="text-center"><div class="text-3xl mb-2">📷</div>
+                <span class="text-sm font-bold text-gray-400">${n===1?'현장 전경':'주요 애로사항'}</span></div>
+            <img id="ph-img-${n}" class="absolute inset-0 w-full h-full object-cover hidden rounded-xl">
+        </div>`).join('')}
+    </div>
+    <div class="px-8 pb-6 flex justify-between">
+        <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
+        <button onclick="next()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">다음 →</button>
+    </div>`;
+}
+
+function renderExpertDiag(el) {
+    const aIdx   = state.step - 3;
+    const area   = DATA.areas[aIdx];
+    const opts   = area.id==='leader' ? DATA.leaderOpts : DATA.expertOpts;
+    const curS   = state.scores[area.id];
+    const curC   = state.causes[area.id]    || [];
+    const curSol = state.solutions[area.id] || [];
+    const sols   = DATA.solutions[area.id];
+
+    el.innerHTML = `
+    <div class="q-header">
+        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">${area.icon} ${area.name} (${aIdx+1}/6)</div>
+        <h2 class="text-xl font-bold text-gray-800">${DATA.questions[area.id][state.track]}</h2>
+    </div>
+    <div class="p-5 space-y-5 overflow-y-auto" style="max-height:calc(100vh - 240px)">
+
+        <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">전문가 평가 <span class="text-red-500">*</span></p>
+            <div class="space-y-2">
+                ${opts.map(o=>`
+                <div onclick="setScore('${area.id}',${o.val})" class="flex items-center p-3 border rounded-lg cursor-pointer transition-all ${curS===o.val?'border-green-500 bg-green-50':'border-gray-200 hover:border-green-300 hover:bg-gray-50'}">
+                    <div class="w-7 h-7 rounded-md flex items-center justify-center font-bold text-xs mr-3 flex-shrink-0 ${curS===o.val?'bg-green-600 text-white':'bg-gray-100 text-gray-500'}">${o.val}</div>
+                    <span class="text-sm font-medium text-gray-700">${o.text}</span>
+                </div>`).join('')}
+            </div>
+        </div>
+
+        <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">근본 원인 분석 (복수 선택)</p>
+            <div class="grid grid-cols-2 gap-2">
+                ${DATA.causes[area.id].map(c=>{
+                    const sel = curC.includes(c);
+                    return `<div onclick="toggleCause('${area.id}','${c.replace(/'/g,"\\'")}')"
+                        class="text-xs border rounded-lg px-3 py-2 cursor-pointer transition-all ${sel?'border-orange-400 bg-orange-50 text-orange-700 font-bold':'border-gray-200 text-gray-600 hover:border-orange-300'}">
+                        ${sel?'✓ ':''}${c}</div>`;
+                }).join('')}
+            </div>
+        </div>
+
+        <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">추천 솔루션 선택</p>
+            <div class="space-y-2">
+                ${sols.map(s=>{
+                    const sel = curSol.includes(s.id);
+                    const phL = s.phase==='short'?'단기':s.phase==='mid'?'중기':'장기';
+                    const phCls = s.phase==='short'?'text-green-600':s.phase==='mid'?'text-blue-600':'text-purple-600';
+                    return `<div onclick="toggleSolution('${area.id}','${s.id}')" class="sol-card ${sel?'checked':''}">
+                        <div class="flex items-start gap-3">
+                            <div class="check-box mt-0.5">${sel?'✓':''}</div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-bold text-gray-800">${s.name}</span>
+                                    <span class="text-xs font-bold ${phCls}">[${phL}]</span>
+                                </div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xs text-gray-500">${s.desc}</span>
+                                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold ml-auto flex-shrink-0">💰 ${s.budget}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>
+
+    </div>
+    <div class="px-6 py-3 border-t flex justify-between">
+        <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
+        <button onclick="next()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">${aIdx<5?'다음 영역 →':'로드맵 작성 →'}</button>
+    </div>`;
+}
+
+function renderRoadmap(el) {
+    const allSols = [];
+    DATA.areas.forEach(a => {
+        (state.solutions[a.id]||[]).forEach(id => {
+            const s = DATA.solutions[a.id].find(x=>x.id===id);
+            if (s) allSols.push({...s, areaName:a.name});
+        });
+    });
+
+    if (!state.roadmap._built) {
+        state.roadmap = { short:[], mid:[], long:[], _built:true };
+        allSols.forEach(s => state.roadmap[s.phase].push(s.id));
+    }
+
+    const allById = {};
+    allSols.forEach(s => allById[s.id] = s);
+
+    const phLabel  = { short:'단기 (3개월 이내)', mid:'중기 (6개월)', long:'장기 (1년+)' };
+    const phBorder = { short:'border-green-300',  mid:'border-blue-300', long:'border-purple-300' };
+    const phText   = { short:'text-green-700',     mid:'text-blue-700',   long:'text-purple-700' };
+
+    el.innerHTML = `
+    <div class="q-header">
+        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">🗺️ 이행 로드맵</div>
+        <h2 class="text-xl font-bold text-gray-800">단계별 추진 과제를 확인·조정하세요</h2>
+        <p class="text-gray-400 text-sm mt-1">항목을 클릭하면 단기→중기→장기 순으로 이동합니다</p>
+    </div>
+    <div class="p-5 overflow-y-auto" style="max-height:calc(100vh - 240px)">
+        <div class="grid grid-cols-3 gap-4">
+            ${['short','mid','long'].map(ph=>`
+            <div>
+                <div class="text-xs font-bold ${phText[ph]} mb-2 text-center">${phLabel[ph]}</div>
+                <div class="roadmap-col ${phBorder[ph]}">
+                    ${state.roadmap[ph].length===0
+                        ? '<p class="text-xs text-gray-300 text-center pt-4">선택된 항목 없음</p>'
+                        : state.roadmap[ph].map(id=>{
+                            const s=allById[id]; if(!s)return'';
+                            return `<div class="roadmap-item" onclick="moveRoadmapItem('${id}','${ph}')">
+                                <div><div class="font-bold text-gray-700 text-xs">${s.name}</div>
+                                    <div class="text-gray-400 text-xs">${s.areaName} · ${s.budget}</div></div>
+                                <span class="text-gray-300 text-xs ml-2">↕</span></div>`;
+                        }).join('')}
+                </div>
+            </div>`).join('')}
+        </div>
+    </div>
+    <div class="px-6 py-3 border-t flex justify-between">
+        <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
+        <button onclick="next()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">종합의견 작성 →</button>
+    </div>`;
+}
+
+function renderOpinion(el) {
+    el.innerHTML = `
+    <div class="q-header">
+        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">📝 전문가 종합의견</div>
+        <h2 class="text-xl font-bold text-gray-800">진단 결과에 대한 종합 의견을 작성해주세요</h2>
+    </div>
+    <div class="p-6">
+        <textarea id="inp-opinion" class="w-full border border-gray-200 rounded-xl p-4 text-sm resize-none" rows="10"
+            placeholder="기업 현황에 대한 전문가 종합 의견을 자유롭게 작성해주세요.&#10;&#10;예) ○○ 기업은 봉제 공정 전반에서 수기 기반 업무가 많아 디지털 전환 효과가 클 것으로 판단됩니다...">${state.opinion}</textarea>
+    </div>
+    <div class="px-6 pb-6 flex justify-between">
+        <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
+        <button onclick="saveOpinion()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-2.5 rounded-xl font-bold text-sm">최종 리포트 발행 →</button>
+    </div>`;
+}
+
+function renderResult(el) {
+    const sum = Object.values(state.scores).reduce((a,b)=>a+b,0);
+    const lv  = sum>=25?5:sum>=20?4:sum>=15?3:sum>=10?2:1;
+    const gradeMap = {5:'LV5. 선도',4:'LV4. 고도화',3:'LV3. 정착',2:'LV2. 도입',1:'LV1. 기초'};
+    const colorMap = {5:'#16a34a',4:'#2563eb',3:'#ca8a04',2:'#ea580c',1:'#dc2626'};
+    state.grade = { lv, txt:gradeMap[lv], color:colorMap[lv], scores:state.scores };
+
+    el.innerHTML = `
+    <div class="p-6">
+        <div class="text-center mb-5">
+            <h2 class="text-2xl font-bold text-gray-800">전문가 진단 완료</h2>
+            <div class="flex items-center justify-center gap-2 mt-1">
+                <span class="font-bold text-xl" style="color:${colorMap[lv]}">${gradeMap[lv]}</span>
+                <span class="text-gray-400">${sum} / 30점</span>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-5">
+            <div class="border rounded-lg p-3"><canvas id="dash-radar" height="180"></canvas></div>
+            <div class="border rounded-lg p-3"><canvas id="dash-bar" height="180"></canvas></div>
+        </div>
+        <button onclick="printExpertReport()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow transition-all mb-3">
+            📄 전문가 진단 리포트 발행
+        </button>
+        <div class="text-center">
+            <button onclick="restart()" class="text-xs text-gray-400 underline">새 기업 진단 시작</button>
+        </div>
+    </div>`;
+    setTimeout(() => drawCharts('dash', state.grade.scores), 100);
+}
+
+// ===== 액션 =====
+function setTrack(t) {
+    state.track=t;
+    document.getElementById('hd-track').innerText=`Track ${t}`;
+    document.getElementById('hd-track').classList.remove('hidden');
+    state.step=1; render();
+}
+
+function saveExpertInfo() {
+    const comp=document.getElementById('ei-comp').value.trim();
+    if(!comp){alert('기업명은 필수입니다.');return;}
+    state.info.comp=comp;
+    state.info.ceo=document.getElementById('ei-ceo').value.trim();
+    state.info.emp=document.getElementById('ei-emp').value.trim();
+    state.info.biz=document.getElementById('ei-biz').value.trim();
+    document.getElementById('hd-company').innerText=comp;
+    document.getElementById('hd-company').classList.remove('hidden');
+    next();
+}
+
+function loadPhoto(inp, n) {
+    if(!inp.files[0])return;
+    const r=new FileReader();
+    r.onload=e=>{
+        document.getElementById(`ph-img-${n}`).src=e.target.result;
+        document.getElementById(`ph-img-${n}`).classList.remove('hidden');
+        document.getElementById(`ph-lbl-${n}`).classList.add('hidden');
+    };
+    r.readAsDataURL(inp.files[0]);
+}
+
+function setScore(id, val) {
+    state.scores[id]=val;
+    renderExpertDiag(document.getElementById('wiz'));
+}
+
+function toggleCause(areaId, cause) {
+    if(!state.causes[areaId])state.causes[areaId]=[];
+    const idx=state.causes[areaId].indexOf(cause);
+    if(idx===-1)state.causes[areaId].push(cause);
+    else        state.causes[areaId].splice(idx,1);
+    renderExpertDiag(document.getElementById('wiz'));
+}
+
+function toggleSolution(areaId, solId) {
+    if(!state.solutions[areaId])state.solutions[areaId]=[];
+    const idx=state.solutions[areaId].indexOf(solId);
+    if(idx===-1)state.solutions[areaId].push(solId);
+    else        state.solutions[areaId].splice(idx,1);
+    renderExpertDiag(document.getElementById('wiz'));
+}
+
+function moveRoadmapItem(id, cur) {
+    const order=['short','mid','long'];
+    const nxt=order[(order.indexOf(cur)+1)%3];
+    state.roadmap[cur]=state.roadmap[cur].filter(x=>x!==id);
+    state.roadmap[nxt].push(id);
+    renderRoadmap(document.getElementById('wiz'));
+}
+
+function saveOpinion() {
+    const op=document.getElementById('inp-opinion').value.trim();
+    if(!op){alert('전문가 종합의견을 입력해주세요.');return;}
+    state.opinion=op;
+    next();
+}
+
+function restart() {
+    state = { step:0, track:null, info:{}, scores:{}, causes:{}, solutions:{},
+              roadmap:{short:[],mid:[],long:[],_built:false}, opinion:'', grade:null };
+    document.getElementById('hd-company').classList.add('hidden');
+    document.getElementById('hd-track').classList.add('hidden');
+    render();
+}
+
+// ===== 네비게이션 =====
+function next() {
+    if(state.step==='result')return;
+    if     (state.step===8)         state.step='roadmap';
+    else if(state.step==='roadmap') state.step='opinion';
+    else if(state.step==='opinion') state.step='result';
+    else                            state.step++;
+    render();
+}
+
+function prev() {
+    if(state.step===0)return;
+    if     (state.step==='roadmap') state.step=8;
+    else if(state.step==='opinion') state.step='roadmap';
+    else if(state.step==='result')  state.step='opinion';
+    else                            state.step--;
+    render();
+}
+
+// ===== 차트 =====
+function drawCharts(prefix, scoresObj) {
+    const labels=DATA.areas.map(a=>a.name);
+    const data  =DATA.areas.map(a=>scoresObj[a.id]||0);
+    ['radar','bar'].forEach(t=>{const k=`${prefix}-${t}`;if(charts[k]){charts[k].destroy();delete charts[k];}});
+    charts[`${prefix}-radar`]=new Chart(document.getElementById(`${prefix}-radar`),{
+        type:'radar',
+        data:{labels,datasets:[{data,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,0.08)',pointBackgroundColor:'#16a34a',pointRadius:3}]},
+        options:{scales:{r:{min:0,max:5,ticks:{display:false},grid:{color:'#e5e7eb'}}},plugins:{legend:false}}
+    });
+    const sorted=DATA.areas.map(a=>({name:a.name,s:scoresObj[a.id]||0})).sort((a,b)=>a.s-b.s);
+    charts[`${prefix}-bar`]=new Chart(document.getElementById(`${prefix}-bar`),{
+        type:'bar',
+        data:{labels:sorted.map(d=>d.name),datasets:[{data:sorted.map(d=>d.s),backgroundColor:sorted.map(d=>d.s<3?'#ef4444':'#16a34a'),borderRadius:3}]},
+        options:{indexAxis:'y',scales:{x:{max:5,grid:{color:'#f1f5f9'}}},plugins:{legend:false}}
+    });
+}
+
+function printExpertReport() {
+    const i=state.info;
+    const g=state.grade;
+    document.getElementById('rpt-info').innerHTML=
+        `<tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold w-24">기업명</th><td class="px-3 text-sm">${i.comp}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold w-24">대표자</th><td class="px-3 text-sm">${i.ceo||'-'}</td></tr>
+         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">종업원수</th><td class="px-3 text-sm">${i.emp||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">사업자번호</th><td class="px-3 text-sm">${i.biz||'-'}</td></tr>
+         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">기업유형</th><td class="px-3 text-sm" colspan="3">Track ${state.track} · ${DATA.tracks[state.track]?.title||''}</td></tr>
+         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm" colspan="3">${new Date().toLocaleDateString('ko-KR')}</td></tr>`;
+    document.getElementById('rpt-grade').innerText=`${g.txt}  (${Object.values(g.scores).reduce((a,b)=>a+b,0)}점 / 30점)`;
+    document.getElementById('rpt-comment').innerText=state.opinion;
+    const allById={};
+    DATA.areas.forEach(a=>DATA.solutions[a.id].forEach(s=>allById[s.id]=s));
+    const phL={short:'단기 (3개월)',mid:'중기 (6개월)',long:'장기 (1년+)'};
+    const phC={short:'green',mid:'blue',long:'purple'};
+    document.getElementById('rpt-roadmap').innerHTML=['short','mid','long'].map(ph=>`
+        <div class="border-t-4 border-${phC[ph]}-400 rounded-lg p-4">
+            <h4 class="font-bold text-${phC[ph]}-700 text-sm mb-3">${phL[ph]}</h4>
+            ${(state.roadmap[ph]||[]).map(id=>{const s=allById[id];if(!s)return'';
+                return `<div class="text-xs border rounded p-2 mb-2 bg-${phC[ph]}-50">
+                    <span class="font-bold">${s.name}</span> <span class="text-gray-500">· ${s.budget}</span></div>`;
+            }).join('')||'<p class="text-xs text-gray-300">항목 없음</p>'}
+        </div>`).join('');
+    const weak=DATA.areas.map(a=>({id:a.id,name:a.name,s:g.scores[a.id]||0})).sort((a,b)=>a.s-b.s).slice(0,3);
+    document.getElementById('rpt-rfp').innerHTML=weak.map(w=>`
+        <div class="border rounded-lg p-4 bg-gray-50 flex items-center gap-3">
+            <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold whitespace-nowrap">${w.name} ${w.s}점</span>
+            <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
+        </div>`).join('');
+    setTimeout(()=>{drawCharts('rpt',g.scores);window.print();},500);
+}
+
+render();
+</script>
+</body>
+</html>
