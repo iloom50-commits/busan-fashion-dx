@@ -409,7 +409,11 @@ function saveSelfInfo() {
 
 function setSelfScore(id, idx) {
     state.selfScores[id] = idx;
+    const scrollEl = document.querySelector('#wiz .overflow-y-auto');
+    const top = scrollEl ? scrollEl.scrollTop : 0;
     renderSelfDiag(document.getElementById('wiz'));
+    const newScrollEl = document.querySelector('#wiz .overflow-y-auto');
+    if (newScrollEl) newScrollEl.scrollTop = top;
 }
 
 function completeSelfDiag() {
