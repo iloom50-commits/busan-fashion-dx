@@ -499,7 +499,29 @@ function printSelfReport() {
             <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold whitespace-nowrap">${w.name} ${w.s}점</span>
             <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
         </div>`).join('');
-    setTimeout(()=>{drawCharts('rpt',g.scores);setTimeout(window.print,150);},300);
+    setTimeout(()=>{
+        drawCharts('rpt',g.scores);
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+            ['rpt-radar','rpt-bar'].forEach(id=>{
+                const c=document.getElementById(id);
+                if(!c)return;
+                const img=new Image();
+                img.src=c.toDataURL('image/png');
+                img.style.width='100%';img.style.height='100%';
+                c.style.display='none';
+                c.parentNode.appendChild(img);
+            });
+            window.print();
+            setTimeout(()=>{
+                ['rpt-radar','rpt-bar'].forEach(id=>{
+                    const c=document.getElementById(id);
+                    if(!c)return;
+                    c.style.display='';
+                    c.parentNode.querySelectorAll('img').forEach(img=>img.remove());
+                });
+            },500);
+        }));
+    },300);
 }
 
 render();
