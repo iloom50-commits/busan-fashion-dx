@@ -134,6 +134,8 @@ async function saveDiagnosis() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             company: state.info.comp,
             ceo: state.info.ceo || '',
+            phone: state.info.phone || '',
+            email: state.info.email || '',
             emp: state.info.emp || '',
             bizType: state.info.biz_type || '',
             track: state.track,
@@ -268,6 +270,12 @@ function renderSelfInfo(el) {
             <div><label class="block text-xs font-bold text-gray-500 mb-1">대표자명 <span class="text-red-500">*</span></label>
                 <input id="si-ceo" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="홍길동" value="${i.ceo||''}"></div>
         </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-bold text-gray-500 mb-1">연락처 <span class="text-red-500">*</span></label>
+                <input id="si-phone" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="010-0000-0000" value="${i.phone||''}"></div>
+            <div><label class="block text-xs font-bold text-gray-500 mb-1">이메일</label>
+                <input id="si-email" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="example@busan.kr" value="${i.email||''}"></div>
+        </div>
         <div>
             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">종업원 수 <span class="text-red-500">*</span></p>
             <div class="grid grid-cols-4 gap-2">
@@ -389,19 +397,22 @@ function renderResult(el) {
 
 // ===== 액션 =====
 function selInfo(key, val) {
-    ['si-comp','si-ceo'].forEach(id=>{const e=document.getElementById(id);if(e)state.info[id.replace('si-','')]=e.value;});
+    ['si-comp','si-ceo','si-phone','si-email'].forEach(id=>{const e=document.getElementById(id);if(e)state.info[id.replace('si-','')]=e.value;});
     state.info[key] = val;
     renderSelfInfo(document.getElementById('wiz'));
 }
 
 function saveSelfInfo() {
-    const comp=document.getElementById('si-comp').value.trim();
-    const ceo =document.getElementById('si-ceo').value.trim();
-    if(!comp){alert('기업명을 입력해주세요.');return;}
-    if(!ceo) {alert('대표자명을 입력해주세요.');return;}
+    const comp =document.getElementById('si-comp').value.trim();
+    const ceo  =document.getElementById('si-ceo').value.trim();
+    const phone=document.getElementById('si-phone').value.trim();
+    if(!comp) {alert('기업명을 입력해주세요.');return;}
+    if(!ceo)  {alert('대표자명을 입력해주세요.');return;}
+    if(!phone){alert('연락처를 입력해주세요.');return;}
     if(!state.info.emp)     {alert('종업원 수를 선택해주세요.');return;}
     if(!state.info.biz_type){alert('주요 매출 형태를 선택해주세요.');return;}
     state.info.comp=comp; state.info.ceo=ceo;
+    state.info.phone=phone; state.info.email=document.getElementById('si-email').value.trim();
     document.getElementById('hd-company').innerText=comp;
     document.getElementById('hd-company').classList.remove('hidden');
     state.step=0; render();
@@ -476,6 +487,7 @@ function printSelfReport() {
     const g=state.grade;
     document.getElementById('rpt-info').innerHTML=
         `<tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold w-24">기업명</th><td class="px-3 text-sm">${i.comp}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold w-24">대표자</th><td class="px-3 text-sm">${i.ceo||'-'}</td></tr>
+         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">연락처</th><td class="px-3 text-sm">${i.phone||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">이메일</th><td class="px-3 text-sm">${i.email||'-'}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">종업원수</th><td class="px-3 text-sm">${i.emp||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">매출형태</th><td class="px-3 text-sm">${i.biz_type||'-'}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">기업유형</th><td class="px-3 text-sm" colspan="3">Track ${state.track} · ${DATA.tracks[state.track]?.title||''}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm" colspan="3">${new Date().toLocaleDateString('ko-KR')}</td></tr>`;
