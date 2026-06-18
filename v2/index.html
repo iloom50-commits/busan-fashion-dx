@@ -158,12 +158,24 @@ const DATA = {
         C: { icon:'🏢', title:'통합 운영형',     desc:'자체 브랜드 + 제조' }
     },
     areas: [
-        { id:'work',     name:'작업지시',  icon:'📋' },
-        { id:'process',  name:'공정관리',  icon:'⚙️' },
-        { id:'quality',  name:'품질관리',  icon:'✅' },
-        { id:'material', name:'자재관리',  icon:'📦' },
-        { id:'basic',    name:'기초역량',  icon:'📊' },
-        { id:'leader',   name:'DX 리더십', icon:'👑' }
+        { id:'work',     name:'작업지시',  icon:'📋',
+          desc:'발주처나 현장에 작업 내용을 어떻게 전달하나요?',
+          opts:['구두·전화·종이로 전달\n(카톡 사진 포함)','카카오톡·엑셀로 공유\n(정해진 양식 없음)','전용 앱·시스템으로\n작업지시서 발행·추적'] },
+        { id:'process',  name:'공정관리',  icon:'⚙️',
+          desc:'생산 공정이 얼마나 진행됐는지 어떻게 파악하나요?',
+          opts:['현장에 직접 가거나\n전화로 파악','화이트보드·엑셀로\n공정 현황 기록','앱·시스템으로\n실시간 공정 추적'] },
+        { id:'quality',  name:'품질관리',  icon:'✅',
+          desc:'불량이 발생하면 어떻게 기록하고 관리하나요?',
+          opts:['별도 기록 없이\n구두로만 처리','노트·엑셀에\n불량 수량 수기 기록','사진·앱으로 즉시 기록하고\n이력 분석'] },
+        { id:'material', name:'자재관리',  icon:'📦',
+          desc:'원단·부자재 재고를 어떻게 파악하고 관리하나요?',
+          opts:['눈으로 확인하거나\n기억으로 관리','노트·엑셀에\n입출고 수기 기록','바코드·앱으로\n실시간 재고 관리'] },
+        { id:'basic',    name:'기초역량',  icon:'📊',
+          desc:'매출·비용 등 경영 데이터를 어떻게 활용하나요?',
+          opts:['수기 장부 또는\n기초 엑셀로만 관리','클라우드 회계 프로그램\n(더존·세금계산서) 사용','경영 데이터를\n대시보드로 실시간 분석'] },
+        { id:'leader',   name:'DX 리더십', icon:'👑',
+          desc:'대표자(사장님)의 디지털 전환 의지와 추진 현황은?',
+          opts:['관심 없음 또는\n필요성을 못 느낌','관심은 있으나\n어디서 시작할지 모름','목표를 갖고\n디지털 전환 적극 추진 중'] }
     ],
     triLabels: ['미도입', '일부 도입', '적극 활용'],
     triScore:  [1, 3, 5],
@@ -330,19 +342,25 @@ function renderSelfDiag(el) {
         <h2 class="text-xl font-bold">6개 영역 자가진단</h2>
         <p class="text-sm text-gray-400 mt-1">각 영역에서 현재 귀사 상황에 가장 가까운 단계를 선택해주세요</p>
     </div>
-    <div class="p-5 space-y-3 overflow-y-auto" style="max-height:calc(100vh - 240px)">
+    <div class="p-5 space-y-4 overflow-y-auto" style="max-height:calc(100vh - 240px)">
         ${DATA.areas.map(a => {
             const cur = state.selfScores[a.id];
+            const selColors = ['border-red-400 bg-red-50 text-red-700','border-orange-400 bg-orange-50 text-orange-700','border-blue-500 bg-blue-50 text-blue-700'];
             return `
-            <div class="border rounded-xl p-4">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="text-lg">${a.icon}</span>
-                    <span class="font-bold text-sm text-gray-800">${a.name}</span>
-                    <span class="text-xs text-gray-400 ml-1">· ${DATA.questions[a.id][state.track||'B']}</span>
+            <div class="border rounded-xl p-4 ${cur!==undefined?'border-blue-200 bg-blue-50/30':''}">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-xl">${a.icon}</span>
+                    <span class="font-bold text-gray-800">${a.name}</span>
+                    ${cur!==undefined?`<span class="ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${['bg-red-100 text-red-600','bg-orange-100 text-orange-600','bg-blue-100 text-blue-600'][cur]}">✓ ${DATA.triLabels[cur]}</span>`:'<span class="ml-auto text-xs text-gray-300">미선택</span>'}
                 </div>
+                <p class="text-xs text-gray-500 mb-3 ml-7">${a.desc}</p>
                 <div class="grid grid-cols-3 gap-2">
-                    ${DATA.triLabels.map((lbl,idx) => `
-                        <div onclick="setSelfScore('${a.id}',${idx})" class="tri-btn ${cur===idx?'sel-'+idx:''}">${lbl}</div>
+                    ${a.opts.map((opt,idx) => `
+                        <button onclick="setSelfScore('${a.id}',${idx})"
+                            class="border-2 rounded-xl p-3 text-center transition-all hover:border-blue-300 ${cur===idx ? selColors[idx] : 'border-gray-200 text-gray-600 hover:bg-gray-50'}">
+                            <div class="font-bold text-sm mb-1">${DATA.triLabels[idx]}</div>
+                            <div class="text-xs leading-snug whitespace-pre-line opacity-80">${opt}</div>
+                        </button>
                     `).join('')}
                 </div>
             </div>`;
