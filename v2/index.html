@@ -51,10 +51,16 @@
         input:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
 
         @media print {
-            body { background: white; display: block; }
-            header, #progress-bar-container, #main-card, .no-print { display: none !important; }
-            #print-area { display: block !important; }
-            .page-break { page-break-before: always; }
+            body > *:not(#report-modal) { display: none !important; }
+            #report-modal {
+                display: block !important;
+                position: static !important;
+                background: none !important;
+                overflow: visible !important;
+            }
+            #report-modal > div { padding: 0 !important; min-height: auto !important; }
+            #report-content { box-shadow: none !important; border-radius: 0 !important; }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
@@ -81,37 +87,55 @@
         <div id="wiz" class="fade-in w-full"></div>
     </div>
 
-    <div id="print-area" class="hidden w-full max-w-4xl mx-auto p-10">
-        <div class="text-center border-b-2 border-gray-800 pb-5 mb-6">
-            <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">기업 자가진단</p>
-            <h1 class="text-3xl font-bold text-[#1e3a5f]">DX 역량 자가진단 결과보고서</h1>
-            <p class="text-gray-400 text-sm mt-1">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</p>
-        </div>
-        <table class="w-full mb-6 border-t-2 border-gray-800 text-sm"><tbody id="rpt-info"></tbody></table>
-        <div class="flex justify-between mb-6" style="height:220px">
-            <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">역량 균형도</h3><canvas id="rpt-radar"></canvas></div>
-            <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">영역별 점수</h3><canvas id="rpt-bar"></canvas></div>
-        </div>
-        <div class="bg-gray-50 p-5 rounded border mb-6">
-            <div class="flex items-center gap-2 mb-2">
-                <span class="bg-blue-900 text-white px-2 py-0.5 text-xs font-bold rounded">종합 등급</span>
-                <span id="rpt-grade" class="font-bold text-blue-900"></span>
+
+</main>
+
+<!-- 결과보고서 모달 -->
+<div id="report-modal" class="hidden fixed inset-0 z-50 bg-black/60 overflow-y-auto">
+    <div class="min-h-full flex items-start justify-center py-8 px-4">
+        <div id="report-content" class="bg-white rounded-2xl w-full max-w-3xl shadow-2xl">
+            <!-- 툴바 -->
+            <div class="no-print flex items-center justify-between px-6 py-4 border-b bg-gray-50 rounded-t-2xl sticky top-0 z-10">
+                <span class="font-bold text-gray-700">📄 진단 결과보고서 미리보기</span>
+                <div class="flex gap-2">
+                    <button onclick="savePDF()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all">⬇ PDF로 저장</button>
+                    <button onclick="closeReport()" class="text-gray-500 hover:text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm">닫기</button>
+                </div>
             </div>
-            <p id="rpt-comment" class="text-sm text-gray-700 leading-relaxed border-t pt-3 mt-2"></p>
-        </div>
-        <div>
-            <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-red-500 pl-3 mb-4">맞춤형 기술 수요 (RFP)</h3>
-            <div id="rpt-rfp" class="space-y-3"></div>
-        </div>
-        <div class="mt-8">
-            <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-green-500 pl-3 mb-3">다음 단계: 전문가 컨설팅 연계</h3>
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
-                <p class="font-bold mb-1">자가진단 결과를 바탕으로 전문가 컨설팅을 신청하시면 맞춤형 이행 로드맵을 제공받을 수 있습니다.</p>
-                <p class="text-xs text-green-500 mt-2">※ 이 보고서는 자가진단 결과이며, 전문가 검토를 거치지 않은 참고 자료입니다.</p>
+            <!-- 보고서 본문 -->
+            <div class="p-10">
+                <div class="text-center border-b-2 border-gray-800 pb-5 mb-6">
+                    <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">기업 자가진단</p>
+                    <h1 class="text-3xl font-bold text-[#1e3a5f]">DX 역량 자가진단 결과보고서</h1>
+                    <p class="text-gray-400 text-sm mt-1">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</p>
+                </div>
+                <table class="w-full mb-6 border-t-2 border-gray-800 text-sm"><tbody id="rpt-info"></tbody></table>
+                <div class="flex justify-between mb-6" style="height:220px">
+                    <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">역량 균형도</h3><canvas id="rpt-radar"></canvas></div>
+                    <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">영역별 점수</h3><canvas id="rpt-bar"></canvas></div>
+                </div>
+                <div class="bg-gray-50 p-5 rounded border mb-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-blue-900 text-white px-2 py-0.5 text-xs font-bold rounded">종합 등급</span>
+                        <span id="rpt-grade" class="font-bold text-blue-900"></span>
+                    </div>
+                    <p id="rpt-comment" class="text-sm text-gray-700 leading-relaxed border-t pt-3 mt-2"></p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-red-500 pl-3 mb-4">맞춤형 기술 수요 (RFP)</h3>
+                    <div id="rpt-rfp" class="space-y-3"></div>
+                </div>
+                <div class="mt-8">
+                    <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-green-500 pl-3 mb-3">다음 단계: 전문가 컨설팅 연계</h3>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
+                        <p class="font-bold mb-1">자가진단 결과를 바탕으로 전문가 컨설팅을 신청하시면 맞춤형 이행 로드맵을 제공받을 수 있습니다.</p>
+                        <p class="text-xs text-green-500 mt-2">※ 이 보고서는 자가진단 결과이며, 전문가 검토를 거치지 않은 참고 자료입니다.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</main>
+</div>
 
 <script>
 firebase.initializeApp({
@@ -517,34 +541,34 @@ function printSelfReport() {
             <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold whitespace-nowrap">${w.name} ${w.s}점</span>
             <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
         </div>`).join('');
-    // print-area를 화면 밖에 표시해야 canvas가 실제 크기를 가짐
-    const pa=document.getElementById('print-area');
-    pa.classList.remove('hidden');
-    pa.style.cssText='position:fixed;left:-9999px;top:0;width:800px;';
+    // 모달 표시 후 차트 그리기 (모달이 보여야 canvas 크기가 생김)
+    document.getElementById('report-modal').classList.remove('hidden');
+    setTimeout(()=>{ drawCharts('rpt',g.scores); }, 150);
+}
+
+function closeReport() {
+    document.getElementById('report-modal').classList.add('hidden');
+}
+
+function savePDF() {
+    ['rpt-radar','rpt-bar'].forEach(id=>{
+        const c=document.getElementById(id);
+        if(!c||c.style.display==='none')return;
+        const img=new Image();
+        img.src=c.toDataURL('image/png');
+        img.style.width='100%'; img.style.height='100%';
+        c.style.display='none';
+        c.parentNode.appendChild(img);
+    });
+    window.print();
     setTimeout(()=>{
-        drawCharts('rpt',g.scores);
-        requestAnimationFrame(()=>requestAnimationFrame(()=>{
-            ['rpt-radar','rpt-bar'].forEach(id=>{
-                const c=document.getElementById(id);
-                if(!c)return;
-                const img=new Image();
-                img.src=c.toDataURL('image/png');
-                img.style.width='100%';img.style.height='100%';
-                c.style.display='none';
-                c.parentNode.appendChild(img);
-            });
-            pa.style.cssText='';
-            window.print();
-            setTimeout(()=>{
-                ['rpt-radar','rpt-bar'].forEach(id=>{
-                    const c=document.getElementById(id);
-                    if(!c)return;
-                    c.style.display='';
-                    c.parentNode.querySelectorAll('img').forEach(img=>img.remove());
-                });
-            },500);
-        }));
-    },300);
+        ['rpt-radar','rpt-bar'].forEach(id=>{
+            const c=document.getElementById(id);
+            if(!c)return;
+            c.style.display='';
+            c.parentNode.querySelectorAll('img').forEach(img=>img.remove());
+        });
+    },500);
 }
 
 render();
