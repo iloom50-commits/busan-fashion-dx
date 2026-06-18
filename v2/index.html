@@ -444,17 +444,18 @@ function prev() {
 function drawCharts(prefix, scoresObj) {
     const labels=DATA.areas.map(a=>a.name);
     const data  =DATA.areas.map(a=>scoresObj[a.id]||0);
+    const anim  =prefix==='rpt'?{duration:0}:{};
     ['radar','bar'].forEach(t=>{const k=`${prefix}-${t}`;if(charts[k]){charts[k].destroy();delete charts[k];}});
     charts[`${prefix}-radar`]=new Chart(document.getElementById(`${prefix}-radar`),{
         type:'radar',
         data:{labels,datasets:[{data,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',pointBackgroundColor:'#2563eb',pointRadius:3}]},
-        options:{scales:{r:{min:0,max:5,ticks:{display:false},grid:{color:'#e5e7eb'}}},plugins:{legend:false}}
+        options:{animation:anim,scales:{r:{min:0,max:5,ticks:{display:false},grid:{color:'#e5e7eb'}}},plugins:{legend:false}}
     });
     const sorted=DATA.areas.map(a=>({name:a.name,s:scoresObj[a.id]||0})).sort((a,b)=>a.s-b.s);
     charts[`${prefix}-bar`]=new Chart(document.getElementById(`${prefix}-bar`),{
         type:'bar',
         data:{labels:sorted.map(d=>d.name),datasets:[{data:sorted.map(d=>d.s),backgroundColor:sorted.map(d=>d.s<3?'#ef4444':'#3b82f6'),borderRadius:3}]},
-        options:{indexAxis:'y',scales:{x:{max:5,grid:{color:'#f1f5f9'}}},plugins:{legend:false}}
+        options:{animation:anim,indexAxis:'y',scales:{x:{max:5,grid:{color:'#f1f5f9'}}},plugins:{legend:false}}
     });
 }
 
@@ -482,7 +483,7 @@ function printSelfReport() {
             <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold whitespace-nowrap">${w.name} ${w.s}점</span>
             <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
         </div>`).join('');
-    setTimeout(()=>{drawCharts('rpt',g.scores);window.print();},500);
+    setTimeout(()=>{drawCharts('rpt',g.scores);setTimeout(window.print,150);},300);
 }
 
 render();
