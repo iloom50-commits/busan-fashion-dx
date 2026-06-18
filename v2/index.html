@@ -50,16 +50,22 @@
 
         input:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
 
+        dialog#report-dialog {
+            border: none; padding: 0; border-radius: 16px;
+            width: min(800px, 95vw); max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+        }
+        dialog#report-dialog::backdrop { background: rgba(0,0,0,0.6); }
+
         @media print {
-            body > *:not(#report-modal) { display: none !important; }
-            #report-modal {
-                display: block !important;
-                position: static !important;
-                background: none !important;
+            body > *:not(dialog) { display: none !important; }
+            dialog#report-dialog {
+                display: block !important; position: static !important;
+                width: 100% !important; max-height: none !important;
+                box-shadow: none !important; border-radius: 0 !important;
                 overflow: visible !important;
             }
-            #report-modal > div { padding: 0 !important; min-height: auto !important; }
-            #report-content { box-shadow: none !important; border-radius: 0 !important; }
+            dialog#report-dialog::backdrop { display: none !important; }
             .no-print { display: none !important; }
         }
     </style>
@@ -90,52 +96,54 @@
 
 </main>
 
-<!-- 결과보고서 모달 -->
-<div id="report-modal" class="hidden fixed inset-0 z-50 bg-black/60 overflow-y-auto">
-    <div class="min-h-full flex items-start justify-center py-8 px-4">
-        <div id="report-content" class="bg-white rounded-2xl w-full max-w-3xl shadow-2xl">
-            <!-- 툴바 -->
-            <div class="no-print flex items-center justify-between px-6 py-4 border-b bg-gray-50 rounded-t-2xl sticky top-0 z-10">
-                <span class="font-bold text-gray-700">📄 진단 결과보고서 미리보기</span>
-                <div class="flex gap-2">
-                    <button onclick="savePDF()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all">⬇ PDF로 저장</button>
-                    <button onclick="closeReport()" class="text-gray-500 hover:text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm">닫기</button>
-                </div>
+<!-- 결과보고서 다이얼로그 -->
+<dialog id="report-dialog">
+    <!-- 툴바 -->
+    <div class="no-print flex items-center justify-between px-6 py-4 border-b bg-gray-50 sticky top-0" style="border-radius:16px 16px 0 0;">
+        <span style="font-weight:700;color:#374151;">📄 진단 결과보고서 미리보기</span>
+        <div style="display:flex;gap:8px;">
+            <button onclick="savePDF()" style="background:#2563eb;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">⬇ PDF로 저장</button>
+            <button onclick="document.getElementById('report-dialog').close()" style="background:white;border:1px solid #e5e7eb;color:#6b7280;padding:8px 16px;border-radius:8px;font-size:14px;cursor:pointer;">닫기</button>
+        </div>
+    </div>
+    <!-- 보고서 본문 -->
+    <div style="padding:40px;">
+        <div style="text-align:center;border-bottom:2px solid #1f2937;padding-bottom:20px;margin-bottom:24px;">
+            <p style="font-size:11px;color:#9ca3af;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">기업 자가진단</p>
+            <h1 style="font-size:28px;font-weight:900;color:#1e3a5f;margin-bottom:4px;">DX 역량 자가진단 결과보고서</h1>
+            <p style="font-size:13px;color:#9ca3af;">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</p>
+        </div>
+        <table style="width:100%;margin-bottom:24px;border-top:2px solid #1f2937;font-size:14px;"><tbody id="rpt-info"></tbody></table>
+        <div style="display:flex;justify-content:space-between;margin-bottom:24px;height:200px;">
+            <div style="width:49%;border:1px solid #e5e7eb;padding:12px;border-radius:8px;">
+                <h3 style="font-size:11px;font-weight:700;text-align:center;margin-bottom:4px;">역량 균형도</h3>
+                <canvas id="rpt-radar"></canvas>
             </div>
-            <!-- 보고서 본문 -->
-            <div class="p-10">
-                <div class="text-center border-b-2 border-gray-800 pb-5 mb-6">
-                    <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">기업 자가진단</p>
-                    <h1 class="text-3xl font-bold text-[#1e3a5f]">DX 역량 자가진단 결과보고서</h1>
-                    <p class="text-gray-400 text-sm mt-1">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</p>
-                </div>
-                <table class="w-full mb-6 border-t-2 border-gray-800 text-sm"><tbody id="rpt-info"></tbody></table>
-                <div class="flex justify-between mb-6" style="height:220px">
-                    <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">역량 균형도</h3><canvas id="rpt-radar"></canvas></div>
-                    <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">영역별 점수</h3><canvas id="rpt-bar"></canvas></div>
-                </div>
-                <div class="bg-gray-50 p-5 rounded border mb-6">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="bg-blue-900 text-white px-2 py-0.5 text-xs font-bold rounded">종합 등급</span>
-                        <span id="rpt-grade" class="font-bold text-blue-900"></span>
-                    </div>
-                    <p id="rpt-comment" class="text-sm text-gray-700 leading-relaxed border-t pt-3 mt-2"></p>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-red-500 pl-3 mb-4">맞춤형 기술 수요 (RFP)</h3>
-                    <div id="rpt-rfp" class="space-y-3"></div>
-                </div>
-                <div class="mt-8">
-                    <h3 class="font-bold text-lg text-[#1e3a5f] border-l-4 border-green-500 pl-3 mb-3">다음 단계: 전문가 컨설팅 연계</h3>
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
-                        <p class="font-bold mb-1">자가진단 결과를 바탕으로 전문가 컨설팅을 신청하시면 맞춤형 이행 로드맵을 제공받을 수 있습니다.</p>
-                        <p class="text-xs text-green-500 mt-2">※ 이 보고서는 자가진단 결과이며, 전문가 검토를 거치지 않은 참고 자료입니다.</p>
-                    </div>
-                </div>
+            <div style="width:49%;border:1px solid #e5e7eb;padding:12px;border-radius:8px;">
+                <h3 style="font-size:11px;font-weight:700;text-align:center;margin-bottom:4px;">영역별 점수</h3>
+                <canvas id="rpt-bar"></canvas>
+            </div>
+        </div>
+        <div style="background:#f8fafc;padding:20px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:24px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span style="background:#1e3a5f;color:white;padding:2px 8px;font-size:11px;font-weight:700;border-radius:4px;">종합 등급</span>
+                <span id="rpt-grade" style="font-weight:700;color:#1e3a5f;"></span>
+            </div>
+            <p id="rpt-comment" style="font-size:13px;color:#374151;line-height:1.6;border-top:1px solid #e5e7eb;padding-top:12px;margin-top:8px;"></p>
+        </div>
+        <div>
+            <h3 style="font-weight:700;font-size:16px;color:#1e3a5f;border-left:4px solid #ef4444;padding-left:12px;margin-bottom:16px;">맞춤형 기술 수요 (RFP)</h3>
+            <div id="rpt-rfp" style="display:flex;flex-direction:column;gap:12px;"></div>
+        </div>
+        <div style="margin-top:32px;">
+            <h3 style="font-weight:700;font-size:16px;color:#1e3a5f;border-left:4px solid #22c55e;padding-left:12px;margin-bottom:12px;">다음 단계: 전문가 컨설팅 연계</h3>
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;font-size:13px;color:#166534;">
+                <p style="font-weight:700;margin-bottom:4px;">자가진단 결과를 바탕으로 전문가 컨설팅을 신청하시면 맞춤형 이행 로드맵을 제공받을 수 있습니다.</p>
+                <p style="font-size:11px;color:#4ade80;margin-top:8px;">※ 이 보고서는 자가진단 결과이며, 전문가 검토를 거치지 않은 참고 자료입니다.</p>
             </div>
         </div>
     </div>
-</div>
+</dialog>
 
 <script>
 firebase.initializeApp({
@@ -541,13 +549,10 @@ function printSelfReport() {
             <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold whitespace-nowrap">${w.name} ${w.s}점</span>
             <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
         </div>`).join('');
-    // 모달 표시 후 차트 그리기 (모달이 보여야 canvas 크기가 생김)
-    document.getElementById('report-modal').classList.remove('hidden');
+    // dialog 열기 → 브라우저 최상위 레이어에 표시됨
+    const dlg = document.getElementById('report-dialog');
+    dlg.showModal();
     setTimeout(()=>{ drawCharts('rpt',g.scores); }, 150);
-}
-
-function closeReport() {
-    document.getElementById('report-modal').classList.add('hidden');
 }
 
 function savePDF() {
