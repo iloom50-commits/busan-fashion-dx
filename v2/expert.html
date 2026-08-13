@@ -57,6 +57,19 @@
 </head>
 <body>
 
+<div id="auth-screen" class="fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-10 text-center w-80 shadow-2xl">
+        <div class="text-4xl mb-4">🔐</div>
+        <h2 class="text-xl font-bold mb-1">진단자 로그인</h2>
+        <p class="text-xs text-gray-400 mb-5">현장진단 전문가 전용</p>
+        <input id="pw-input" type="password" placeholder="접속 코드 입력"
+            class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm mb-3 text-center"
+            onkeydown="if(event.key==='Enter')checkPw()">
+        <button onclick="checkPw()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-bold text-sm">확인</button>
+        <p id="pw-err" class="text-red-500 text-xs mt-2 hidden">접속 코드가 올바르지 않습니다</p>
+    </div>
+</div>
+
 <header>
     <div class="flex items-center gap-2">
         <span class="w-6 h-6 bg-green-500 rounded flex items-center justify-center text-xs font-bold">DX</span>
@@ -108,6 +121,18 @@
 </main>
 
 <script>
+const ACCESS_CODE = '2026';
+
+function checkPw() {
+    if (document.getElementById('pw-input').value.trim() === ACCESS_CODE) {
+        document.getElementById('auth-screen').classList.add('hidden');
+        render();
+    } else {
+        document.getElementById('pw-err').classList.remove('hidden');
+        document.getElementById('pw-input').value = '';
+    }
+}
+
 firebase.initializeApp({
     apiKey: "AIzaSyDCS1ut21a-x-l1dUiS2QbR9wxOUxbK6pY",
     authDomain: "dx-tool-d262e.firebaseapp.com",
@@ -117,6 +142,27 @@ firebase.initializeApp({
     appId: "1:145376564416:web:2ad06b81bb48ecf81f8925"
 });
 const db = firebase.firestore();
+
+// 사업자번호: 저장·대조는 숫자 10자리로 정규화, 표시만 하이픈 형식
+function normBizNum(v) { return String(v||'').replace(/\D/g,''); }
+function fmtBizNum(v) {
+    const n = normBizNum(v);
+    return n.length===10 ? `${n.slice(0,3)}-${n.slice(3,5)}-${n.slice(5)}` : (v||'-');
+}
+function tsMillis(t) { return t && t.toMillis ? t.toMillis() : 0; }
+function tsText(t) {
+    const m = tsMillis(t);
+    return m ? new Date(m).toLocaleDateString('ko-KR') : '날짜 미상';
+}
+
+// 자가진단 목록 조회 (단일 조건 where — 복합 색인 불필요)
+let selfCache = null;
+async function fetchSelfList() {
+    if (selfCache) return selfCache;
+    const snap = await db.collection('diagnoses').where('type','==','self').get();
+    selfCache = snap.docs.map(x => ({ id:x.id, ...x.data() }));
+    return selfCache;
+}
 
 async function saveDiagnosis() {
     if (state.saved) return;
@@ -129,7 +175,11 @@ async function saveDiagnosis() {
             company: state.info.comp,
             ceo: state.info.ceo || '',
             emp: state.info.emp || '',
-            bizNum: state.info.biz || '',
+            bizNum: normBizNum(state.info.biz),
+            phone: state.info.phone || '',
+            email: state.info.email || '',
+            selfRef: state.selfRef || null,
+            selfScores: state.selfScores || null,
             track: state.track,
             gradeLv: state.grade.lv,
             gradeTxt: state.grade.txt,
@@ -227,6 +277,7 @@ const DATA = {
 };
 
 const STEPS = [
+    { s:'lookup',  label:'자가진단' },
     { s:0,         label:'유형선택' },
     { s:1,         label:'기본정보' },
     { s:2,         label:'현장사진' },
@@ -242,10 +293,11 @@ const STEPS = [
 ];
 
 let state = {
-    step:0, track:null,
+    step:'lookup', track:null,
     info:{}, scores:{}, causes:{}, solutions:{},
     roadmap:{ short:[], mid:[], long:[], _built:false },
-    opinion:'', grade:null, saved:false
+    opinion:'', grade:null, saved:false,
+    selfRef:null, selfData:null, selfScores:null
 };
 let charts = {};
 
@@ -263,7 +315,8 @@ function render() {
     const el = document.getElementById('wiz');
     el.className = 'fade-in w-full';
     void el.offsetWidth;
-    if      (state.step === 0)                    renderTrack(el);
+    if      (state.step === 'lookup')             renderLookup(el);
+    else if (state.step === 0)                    renderTrack(el);
     else if (state.step === 1)                    renderExpertInfo(el);
     else if (state.step === 2)                    renderPhoto(el);
     else if (state.step >= 3 && state.step <= 8) renderExpertDiag(el);
@@ -272,31 +325,128 @@ function render() {
     else if (state.step === 'result')             renderResult(el);
 }
 
+function renderLookup(el) {
+    el.innerHTML = `
+    <div class="q-header">
+        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">STEP 1</div>
+        <h2 class="text-xl font-bold">자가진단 결과 불러오기</h2>
+        <p class="text-gray-400 text-sm mt-1">기업이 사전에 실시한 자가진단 결과를 불러와 기본정보를 자동으로 채웁니다</p>
+    </div>
+    <div class="p-8 max-w-lg mx-auto space-y-5">
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">사업자번호</label>
+            <div class="flex gap-2">
+                <input id="lk-biznum" class="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="123-45-67890"
+                    onkeydown="if(event.key==='Enter')lookupByBizNum()">
+                <button onclick="lookupByBizNum()" class="bg-green-600 hover:bg-green-700 text-white px-6 rounded-lg font-bold text-sm whitespace-nowrap">조회</button>
+            </div>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">기업명으로 찾기 <span class="font-normal text-gray-400">— 사업자번호를 모를 때</span></label>
+            <div class="flex gap-2">
+                <input id="lk-name" class="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="부산봉제"
+                    onkeydown="if(event.key==='Enter')lookupByName()">
+                <button onclick="lookupByName()" class="border-2 border-green-600 text-green-700 hover:bg-green-50 px-6 rounded-lg font-bold text-sm whitespace-nowrap">검색</button>
+            </div>
+        </div>
+        <div id="lk-result"></div>
+    </div>
+    <div class="px-8 pb-6 flex justify-end">
+        <button onclick="skipLookup()" class="text-sm text-gray-400 underline">자가진단 없이 시작 →</button>
+    </div>`;
+}
+
+function lkMsg(cls, html) { document.getElementById('lk-result').innerHTML =
+    `<div class="border rounded-lg p-4 text-sm ${cls}">${html}</div>`; }
+
+async function lookupByBizNum() {
+    const key = normBizNum(document.getElementById('lk-biznum').value);
+    if (key.length !== 10) { lkMsg('border-orange-200 bg-orange-50 text-orange-700','사업자번호를 숫자 10자리로 입력해주세요. (예: 123-45-67890)'); return; }
+    lkMsg('border-gray-200 bg-gray-50 text-gray-500','조회 중...');
+    try {
+        const list = await fetchSelfList();
+        renderHits(list.filter(x => normBizNum(x.bizNum) === key), `사업자번호 ${fmtBizNum(key)}`);
+    } catch(e) { lkMsg('border-red-200 bg-red-50 text-red-600','조회 실패: '+e.message); }
+}
+
+async function lookupByName() {
+    const q = document.getElementById('lk-name').value.replace(/\s/g,'');
+    if (!q) { lkMsg('border-orange-200 bg-orange-50 text-orange-700','기업명을 입력해주세요.'); return; }
+    lkMsg('border-gray-200 bg-gray-50 text-gray-500','검색 중...');
+    try {
+        const list = await fetchSelfList();
+        renderHits(list.filter(x => String(x.company||'').replace(/\s/g,'').includes(q)), `기업명 "${q}"`);
+    } catch(e) { lkMsg('border-red-200 bg-red-50 text-red-600','검색 실패: '+e.message); }
+}
+
+function renderHits(hits, label) {
+    if (!hits.length) {
+        lkMsg('border-orange-200 bg-orange-50 text-orange-700',
+            `<p class="font-bold mb-1">${label}에 해당하는 자가진단 이력이 없습니다</p>
+             <p class="text-xs">기업명으로 다시 찾아보거나, 아래 '자가진단 없이 시작'으로 진행하세요.</p>`);
+        return;
+    }
+    hits.sort((a,b) => tsMillis(b.timestamp) - tsMillis(a.timestamp));
+    document.getElementById('lk-result').innerHTML = hits.map((h,idx) => `
+        <div class="border rounded-lg p-4 mb-2 ${idx===0?'border-green-300 bg-green-50':'border-gray-200'}">
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <div class="font-bold text-gray-800">${h.company||'-'}${idx===0&&hits.length>1?' <span class="text-xs text-green-700">(최신)</span>':''}</div>
+                    <div class="text-xs text-gray-500 mt-0.5">${h.ceo||'-'} · ${h.emp||'-'} · Track ${h.track||'-'} · ${h.gradeTxt||'-'}${h.totalScore!=null?` (${h.totalScore}점)`:''}</div>
+                    <div class="text-xs text-gray-400 mt-0.5">${fmtBizNum(h.bizNum)} · ${tsText(h.timestamp)}</div>
+                </div>
+                <button onclick="applySelf('${h.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap flex-shrink-0">이 결과로 시작 →</button>
+            </div>
+        </div>`).join('')
+        + (hits.length>1 ? `<p class="text-xs text-gray-400 mt-1">${hits.length}건이 조회되었습니다. 최신 결과 사용을 권장합니다.</p>` : '');
+}
+
+function applySelf(id) {
+    const d = (selfCache||[]).find(x => x.id === id);
+    if (!d) return;
+    state.selfRef    = id;
+    state.selfData   = d;
+    state.selfScores = d.scores || null;
+    state.info = { comp:d.company||'', ceo:d.ceo||'', emp:d.emp||'',
+                   biz:fmtBizNum(d.bizNum), phone:d.phone||'', email:d.email||'' };
+    state.track = d.track || null;
+    document.getElementById('hd-company').innerText = state.info.comp;
+    document.getElementById('hd-company').classList.remove('hidden');
+    state.step = 0; render();
+}
+
+function skipLookup() { state.step = 0; render(); }
+
 function renderTrack(el) {
+    const sug = state.selfData ? state.selfData.track : null;
     el.innerHTML = `
     <div class="q-header text-center">
-        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-2">STEP 1</div>
+        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-2">STEP 2</div>
         <h2 class="text-2xl font-bold text-gray-800">기업 유형을 선택해주세요</h2>
         <p class="text-gray-400 text-sm mt-1">유형에 따라 진단 문항이 맞춤 설정됩니다</p>
+        ${sug?`<div class="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-xs font-bold mt-3">💡 자가진단 시 선택: Track ${sug}</div>`:''}
     </div>
     <div class="p-8 grid grid-cols-3 gap-4">
         ${Object.keys(DATA.tracks).map(k => `
-            <div onclick="setTrack('${k}')" class="relative border-2 border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-green-500 hover:shadow-lg transition-all group">
+            <div onclick="setTrack('${k}')" class="relative border-2 ${k===sug?'border-green-300 bg-green-50':'border-gray-200'} rounded-xl p-6 text-center cursor-pointer hover:border-green-500 hover:shadow-lg transition-all group">
+                ${k===sug?'<span class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full">자가진단</span>':''}
                 <div class="text-4xl mb-3">${DATA.tracks[k].icon}</div>
                 <div class="font-bold text-green-700 text-sm">Track ${k}</div>
                 <div class="font-bold text-gray-800 mt-1">${DATA.tracks[k].title}</div>
                 <p class="text-xs text-gray-500 mt-2">${DATA.tracks[k].desc}</p>
                 <div class="mt-4 text-xs text-green-600 font-bold opacity-0 group-hover:opacity-100">선택하기 →</div>
             </div>`).join('')}
-    </div>`;
+    </div>
+    <div class="px-8 pb-4"><button onclick="prev()" class="text-gray-400 text-sm">← 이전</button></div>`;
 }
 
 function renderExpertInfo(el) {
     const i = state.info;
     el.innerHTML = `
     <div class="q-header">
-        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">STEP 2</div>
+        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">STEP 3</div>
         <h2 class="text-xl font-bold">기본 정보</h2>
+        ${state.selfRef?'<p class="text-sm text-green-600 mt-1">✓ 자가진단 결과에서 불러온 정보입니다 — 현장에서 확인·수정해주세요</p>':''}
     </div>
     <div class="p-8 space-y-4 max-w-lg mx-auto">
         <div><label class="block text-xs font-bold text-gray-500 mb-1">기업명 <span class="text-red-500">*</span></label>
@@ -307,7 +457,8 @@ function renderExpertInfo(el) {
             <div><label class="block text-xs font-bold text-gray-500 mb-1">종업원수</label>
                 <input id="ei-emp" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.emp||''}" placeholder="예) 8명"></div>
             <div><label class="block text-xs font-bold text-gray-500 mb-1">사업자번호</label>
-                <input id="ei-biz" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.biz||''}"></div>
+                <input id="ei-biz" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" value="${i.biz||''}" placeholder="123-45-67890">
+                <p class="text-xs text-gray-400 mt-1">자가진단 결과와 연결되는 키입니다</p></div>
         </div>
         <div class="pt-4 flex justify-between">
             <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
@@ -319,7 +470,7 @@ function renderExpertInfo(el) {
 function renderPhoto(el) {
     el.innerHTML = `
     <div class="q-header">
-        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">STEP 3</div>
+        <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">STEP 4</div>
         <h2 class="text-xl font-bold">현장 사진</h2>
         <button onclick="next()" class="text-xs text-green-500 underline mt-1 block">건너뛰기</button>
     </div>
@@ -346,6 +497,9 @@ function renderExpertDiag(el) {
     const curC   = state.causes[area.id]    || [];
     const curSol = state.solutions[area.id] || [];
     const sols   = DATA.solutions[area.id];
+    // 자가진단 응답(1/3/5점)은 참고 표시만 — 전문가 평가는 독립적으로 입력받는다
+    const selfS  = state.selfScores ? state.selfScores[area.id] : undefined;
+    const selfLbl = { 1:'미도입', 3:'일부 도입', 5:'적극 활용' };
 
     el.innerHTML = `
     <div class="q-header">
@@ -353,6 +507,13 @@ function renderExpertDiag(el) {
         <h2 class="text-xl font-bold text-gray-800">${DATA.questions[area.id][state.track]}</h2>
     </div>
     <div class="p-5 space-y-5 overflow-y-auto" style="max-height:calc(100vh - 240px)">
+
+        ${selfS!=null?`
+        <div class="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 text-xs flex-wrap">
+            <span class="font-bold text-blue-600">🏢 자가진단 응답</span>
+            <span class="font-bold text-blue-900">${selfLbl[selfS]||'-'} (${selfS}점)</span>
+            <span class="text-blue-400 ml-auto">참고용 · 전문가 평가는 독립적으로 판단해주세요</span>
+        </div>`:''}
 
         <div>
             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">전문가 평가 <span class="text-red-500">*</span></p>
@@ -520,10 +681,13 @@ function setTrack(t) {
 function saveExpertInfo() {
     const comp=document.getElementById('ei-comp').value.trim();
     if(!comp){alert('기업명은 필수입니다.');return;}
+    const biz=normBizNum(document.getElementById('ei-biz').value);
+    if(biz && biz.length!==10){alert('사업자번호를 숫자 10자리로 입력해주세요.\n(예: 123-45-67890)');return;}
+    if(!biz && !confirm('사업자번호 없이 진행하면 이 진단은 자가진단 결과와 연결되지 않습니다.\n계속하시겠습니까?'))return;
     state.info.comp=comp;
     state.info.ceo=document.getElementById('ei-ceo').value.trim();
     state.info.emp=document.getElementById('ei-emp').value.trim();
-    state.info.biz=document.getElementById('ei-biz').value.trim();
+    state.info.biz=biz?fmtBizNum(biz):'';
     document.getElementById('hd-company').innerText=comp;
     document.getElementById('hd-company').classList.remove('hidden');
     next();
@@ -577,8 +741,10 @@ function saveOpinion() {
 }
 
 function restart() {
-    state = { step:0, track:null, info:{}, scores:{}, causes:{}, solutions:{},
-              roadmap:{short:[],mid:[],long:[],_built:false}, opinion:'', grade:null, saved:false };
+    state = { step:'lookup', track:null, info:{}, scores:{}, causes:{}, solutions:{},
+              roadmap:{short:[],mid:[],long:[],_built:false}, opinion:'', grade:null, saved:false,
+              selfRef:null, selfData:null, selfScores:null };
+    selfCache = null;  // 다음 기업 진단 시 최신 자가진단 목록을 다시 조회
     document.getElementById('hd-company').classList.add('hidden');
     document.getElementById('hd-track').classList.add('hidden');
     render();
@@ -587,7 +753,8 @@ function restart() {
 // ===== 네비게이션 =====
 function next() {
     if(state.step==='result')return;
-    if     (state.step===8)         state.step='roadmap';
+    if     (state.step==='lookup')  state.step=0;
+    else if(state.step===8)         state.step='roadmap';
     else if(state.step==='roadmap') state.step='opinion';
     else if(state.step==='opinion') state.step='result';
     else                            state.step++;
@@ -595,8 +762,9 @@ function next() {
 }
 
 function prev() {
-    if(state.step===0)return;
-    if     (state.step==='roadmap') state.step=8;
+    if(state.step==='lookup')return;
+    if     (state.step===0)         state.step='lookup';
+    else if(state.step==='roadmap') state.step=8;
     else if(state.step==='opinion') state.step='roadmap';
     else if(state.step==='result')  state.step='opinion';
     else                            state.step--;
@@ -652,7 +820,8 @@ function printExpertReport() {
     setTimeout(()=>{drawCharts('rpt',g.scores);window.print();},500);
 }
 
-render();
+// 진단자 로그인 통과 후에만 render() 호출 — checkPw() 참조
+document.getElementById('pw-input').focus();
 </script>
 </body>
 </html>
