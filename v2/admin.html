@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -168,6 +168,14 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
+// 사용자 입력을 HTML에 넣기 전에 반드시 거친다.
+// 없으면 상호에 '&'나 '<'만 있어도 표시가 깨진다.
+function esc(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 let allData = [];
 let charts = {};
 
@@ -293,11 +301,11 @@ function applyFilter() {
         const score = v => v != null ? `<span class="${v<=2?'text-red-500':v>=4?'text-green-600':''} font-bold">${v}</span>` : '-';
         return `<tr>
             <td class="text-gray-400 text-xs">${dateStr}</td>
-            <td class="font-bold text-gray-800">${d.company||'-'}</td>
-            <td class="text-gray-500">${d.emp||'-'}</td>
-            <td class="text-center"><span class="badge ${typeColor[d.type]||''}">${typeLabel[d.type]||d.type}</span></td>
-            <td class="text-center font-bold text-gray-600">Track ${d.track||'-'}</td>
-            <td class="text-center"><span class="badge ${gradeColor[d.gradeLv]||''}">${d.gradeTxt||'-'}</span></td>
+            <td class="font-bold text-gray-800">${esc(d.company)||'-'}</td>
+            <td class="text-gray-500">${esc(d.emp)||'-'}</td>
+            <td class="text-center"><span class="badge ${typeColor[d.type]||''}">${typeLabel[d.type]||esc(d.type)}</span></td>
+            <td class="text-center font-bold text-gray-600">Track ${esc(d.track)||'-'}</td>
+            <td class="text-center"><span class="badge ${gradeColor[d.gradeLv]||''}">${esc(d.gradeTxt)||'-'}</span></td>
             <td class="text-center font-bold">${d.totalScore||'-'}</td>
             <td class="text-center">${score(sc.work)}</td>
             <td class="text-center">${score(sc.process)}</td>

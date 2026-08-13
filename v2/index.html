@@ -172,6 +172,14 @@ const db = firebase.firestore();
 // 한글만 다른 글꼴로 나온다.
 Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
 
+// 사용자 입력을 HTML에 넣기 전에 반드시 거친다.
+// 없으면 상호에 '&'나 '<'만 있어도 표시가 깨지고, 큰따옴표는 속성을 끊어 값이 잘린다.
+function esc(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 // 사업자번호: 저장·대조는 숫자 10자리로 정규화, 표시만 하이픈 형식
 function normBizNum(v) { return String(v||'').replace(/\D/g,''); }
 function fmtBizNum(v) {
@@ -333,19 +341,19 @@ function renderSelfInfo(el) {
     <div class="p-6 space-y-5">
         <div class="grid grid-cols-2 gap-3">
             <div><label class="block text-xs font-bold text-gray-500 mb-1">기업명 <span class="text-red-500">*</span></label>
-                <input id="si-comp" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="(주)부산봉제" value="${i.comp||''}"></div>
+                <input id="si-comp" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="(주)부산봉제" value="${esc(i.comp)}"></div>
             <div><label class="block text-xs font-bold text-gray-500 mb-1">대표자명 <span class="text-red-500">*</span></label>
-                <input id="si-ceo" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="홍길동" value="${i.ceo||''}"></div>
+                <input id="si-ceo" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="홍길동" value="${esc(i.ceo)}"></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
             <div><label class="block text-xs font-bold text-gray-500 mb-1">사업자번호 <span class="text-red-500">*</span></label>
-                <input id="si-biznum" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="123-45-67890" value="${i.biznum||''}">
+                <input id="si-biznum" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="123-45-67890" value="${esc(i.biznum)}">
                 <p class="text-xs text-gray-400 mt-1">숫자 10자리 · 전문가 현장진단 결과와 연결하는 데 사용됩니다</p></div>
             <div><label class="block text-xs font-bold text-gray-500 mb-1">연락처 <span class="text-red-500">*</span></label>
-                <input id="si-phone" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="010-0000-0000" value="${i.phone||''}"></div>
+                <input id="si-phone" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="010-0000-0000" value="${esc(i.phone)}"></div>
         </div>
         <div><label class="block text-xs font-bold text-gray-500 mb-1">이메일</label>
-            <input id="si-email" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="example@busan.kr" value="${i.email||''}"></div>
+            <input id="si-email" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="example@busan.kr" value="${esc(i.email)}"></div>
         <p class="text-xs text-gray-400 flex items-start gap-1.5 -mt-2">
             <span>🔒</span>
             <span>대표자명·연락처·이메일은 결과보고서 출력에만 사용되며 서버에 저장되지 않습니다.</span>
@@ -657,9 +665,9 @@ function printSelfReport() {
     const i=state.info;
     const g=state.grade;
     document.getElementById('rpt-info').innerHTML=
-        `<tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold w-24">기업명</th><td class="px-3 text-sm">${i.comp}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold w-24">대표자</th><td class="px-3 text-sm">${i.ceo||'-'}</td></tr>
-         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">연락처</th><td class="px-3 text-sm">${i.phone||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">이메일</th><td class="px-3 text-sm">${i.email||'-'}</td></tr>
-         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">종업원수</th><td class="px-3 text-sm">${i.emp||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">매출형태</th><td class="px-3 text-sm">${i.biz_type||'-'}</td></tr>
+        `<tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold w-24">기업명</th><td class="px-3 text-sm">${esc(i.comp)}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold w-24">대표자</th><td class="px-3 text-sm">${esc(i.ceo)||'-'}</td></tr>
+         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">연락처</th><td class="px-3 text-sm">${esc(i.phone)||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">이메일</th><td class="px-3 text-sm">${esc(i.email)||'-'}</td></tr>
+         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">종업원수</th><td class="px-3 text-sm">${esc(i.emp)||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">매출형태</th><td class="px-3 text-sm">${esc(i.biz_type)||'-'}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">기업유형</th><td class="px-3 text-sm" colspan="3">Track ${state.track} · ${DATA.tracks[state.track]?.title||''}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">사업자번호</th><td class="px-3 text-sm">${fmtBizNum(i.biznum)}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm">${new Date().toLocaleDateString('ko-KR')}</td></tr>`;
     document.getElementById('rpt-gauge-wrap').innerHTML=gaugeSection(g);
