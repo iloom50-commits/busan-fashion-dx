@@ -740,9 +740,14 @@ function renderResult(el) {
             <div class="border rounded-lg p-3"><canvas id="dash-radar" height="180"></canvas></div>
             <div class="border rounded-lg p-3"><canvas id="dash-bar" height="180"></canvas></div>
         </div>
-        <button onclick="printExpertReport()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow transition-all mb-3">
-            📄 전문가 진단 리포트 발행
-        </button>
+        <div class="flex gap-3 mb-3">
+            <button onclick="exportExpertResult()" class="flex-1 border-2 border-green-600 text-green-700 hover:bg-green-50 py-3 rounded-lg font-bold text-sm transition-all">
+                💾 결과 JSON 저장
+            </button>
+            <button onclick="printExpertReport()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold text-sm shadow transition-all">
+                📄 전문가 진단 리포트 발행
+            </button>
+        </div>
         <div id="save-status" class="text-center mt-2 h-5"></div>
         <div class="text-center mt-1">
             <button onclick="restart()" class="text-xs text-gray-400 underline">새 기업 진단 시작</button>
@@ -875,6 +880,27 @@ function drawCharts(prefix, scoresObj) {
         data:{labels:sorted.map(d=>d.name),datasets:[{data:sorted.map(d=>d.s),backgroundColor:sorted.map(d=>d.s<3?'#ef4444':'#16a34a'),borderRadius:3}]},
         options:{indexAxis:'y',scales:{x:{max:5,grid:{color:'#f1f5f9'}}},plugins:{legend:false}}
     });
+}
+
+// Firestore에는 개인정보를 저장하지 않으므로, 담당자가 보관할 사본은 이 파일로 남긴다.
+function exportExpertResult() {
+    const data = JSON.stringify({
+        info: state.info,
+        track: state.track,
+        scores: state.scores,
+        causes: state.causes,
+        solutions: state.solutions,
+        roadmap: { short: state.roadmap.short, mid: state.roadmap.mid, long: state.roadmap.long },
+        opinion: state.opinion,
+        grade: state.grade,
+        selfRef: state.selfRef,
+        selfScores: state.selfScores,
+        exportedAt: new Date().toISOString()
+    }, null, 2);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([data], {type:'application/json'}));
+    a.download = `전문가진단_${state.info.comp||'결과'}_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
 }
 
 function printExpertReport() {
