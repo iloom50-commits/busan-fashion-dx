@@ -1115,7 +1115,7 @@ function gaugeSection(g) {
     const total = Object.values(g.scores).reduce((a,b)=>a+b,0);
     const cur = GRADES[g.lv-1];
     return `
-    <div id="rpt-gauge" class="mb-6">
+    <div id="rpt-gauge" class="mb-6" style="break-inside:avoid">
         <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-[#14532d] pl-3 mb-3">종합 등급 판정</h3>
         <div class="flex gap-1">
             ${GRADES.map(x=>`
@@ -1144,7 +1144,7 @@ function strengthSection(g) {
               : `<p class="text-sm text-gray-300">${empty}</p>`}
         </div>`;
     return `
-    <div id="rpt-strength" class="flex justify-between mb-6">
+    <div id="rpt-strength" class="flex justify-between mb-6" style="break-inside:avoid">
         ${cell('취약 영역 (2점 이하)', weak, '해당 없음')}
         ${cell('강점 영역 (4점 이상)', strong, '해당 없음')}
     </div>`;
@@ -1169,7 +1169,7 @@ function compareSection(g) {
     }).join('');
     if (!rows) return '';
     return `
-    <div id="rpt-compare" class="mb-6">
+    <div id="rpt-compare" class="mb-6" style="break-inside:avoid">
         <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-blue-500 pl-3 mb-3">자가진단 대비 전문가 평가</h3>
         <table class="w-full border-t-2 border-gray-800">
             <thead><tr class="bg-gray-50">
@@ -1188,7 +1188,7 @@ function compareSection(g) {
 function overviewSection() {
     const scale = DATA.expertOpts.map(o => `${o.val}점 ${o.text}`).join(' · ');
     return `
-    <div id="rpt-overview" class="mb-6">
+    <div id="rpt-overview" class="mb-6" style="break-inside:avoid">
         <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-gray-400 pl-3 mb-3">진단 개요</h3>
         <div class="border rounded-lg p-4 text-sm text-gray-700 leading-relaxed">
             <p class="mb-2">전문가가 현장을 방문하여 대표자·실무자 면담과 작업 현장 관찰을 통해

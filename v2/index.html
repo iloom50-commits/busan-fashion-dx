@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -594,7 +594,7 @@ function gaugeSection(g) {
     const total = Object.values(g.scores).reduce((a,b)=>a+b,0);
     const cur = GRADES[g.lv-1];
     return `
-    <div id="rpt-gauge" style="margin-bottom:24px;">
+    <div id="rpt-gauge" style="margin-bottom:24px;break-inside:avoid">
         <h3 style="font-weight:700;font-size:16px;color:#1e3a5f;border-left:4px solid #1e3a5f;padding-left:12px;margin-bottom:12px;">종합 등급 판정</h3>
         <div style="display:flex;gap:4px;">
             ${GRADES.map(x=>{
