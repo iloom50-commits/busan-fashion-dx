@@ -129,6 +129,7 @@
             <p style="font-size:11px;font-weight:700;color:#1e3a5f;margin-bottom:8px;">📋 진단 결과 요약</p>
             <p id="rpt-comment" style="font-size:13px;color:#374151;line-height:1.6;"></p>
         </div>
+        <div id="rpt-answers-wrap"></div>
         <div>
             <h3 style="font-weight:700;font-size:16px;color:#1e3a5f;border-left:4px solid #ef4444;padding-left:12px;margin-bottom:16px;">맞춤형 기술 수요 (RFP)</h3>
             <div id="rpt-rfp" style="display:flex;flex-direction:column;gap:12px;"></div>
@@ -439,7 +440,7 @@ function renderResult(el) {
         </div>
         <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
             <p class="text-xs font-bold text-blue-500 mb-1">📋 진단 결과 요약</p>
-            <p class="text-sm text-blue-800 leading-relaxed">${DATA.autoComments[lv]}</p>
+            <p class="text-sm text-blue-800 leading-relaxed">${buildSummary(state.grade)}</p>
         </div>
         <div class="flex gap-3 mb-3">
             <button onclick="exportSelfResult()" class="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 py-3 rounded-lg font-bold text-sm transition-all">
@@ -605,6 +606,47 @@ function gaugeSection(g) {
     </div>`;
 }
 
+// 대표자가 무엇을 골랐는지 보고서에 남긴다. 차트만으로는 응답 내역을 확인할 수 없다.
+function answersSection() {
+    const rows = DATA.areas.map(a => {
+        const idx = state.selfScores[a.id];
+        if (idx === undefined) return '';
+        return `<tr style="border-bottom:1px solid #f1f5f9">
+            <td style="padding:8px 12px;font-size:13px;white-space:nowrap">${a.icon} ${a.name}</td>
+            <td style="padding:8px 12px;font-size:12px;color:#6b7280">${a.desc}</td>
+            <td style="padding:8px 12px;font-size:13px;font-weight:700;text-align:center;white-space:nowrap">${DATA.triLabels[idx]}</td>
+            <td style="padding:8px 12px;font-size:13px;text-align:center;white-space:nowrap">${DATA.triScore[idx]}점</td>
+        </tr>`;
+    }).join('');
+    return `
+    <div id="rpt-answers" style="margin-bottom:24px;">
+        <h3 style="font-weight:700;font-size:16px;color:#1e3a5f;border-left:4px solid #94a3b8;padding-left:12px;margin-bottom:12px;">영역별 응답 내역</h3>
+        <table style="width:100%;border-top:2px solid #1f2937;">
+            <thead><tr style="background:#f8fafc">
+                <th style="padding:8px 12px;font-size:11px;font-weight:700;text-align:left">영역</th>
+                <th style="padding:8px 12px;font-size:11px;font-weight:700;text-align:left">질문</th>
+                <th style="padding:8px 12px;font-size:11px;font-weight:700">선택한 단계</th>
+                <th style="padding:8px 12px;font-size:11px;font-weight:700">점수</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+    </div>`;
+}
+
+// 등급별 고정 문구에 실제 응답을 더한다.
+// 고정 문구만 쓰면 등급이 같은 기업이 완전히 같은 보고서를 받는다.
+function buildSummary(g) {
+    const arr    = DATA.areas.map(a => ({ name:a.name, s:g.scores[a.id] || 0 }));
+    const weak   = arr.filter(x => x.s === 1).map(x => x.name);
+    const strong = arr.filter(x => x.s === 5).map(x => x.name);
+    let s = DATA.autoComments[g.lv];
+    if (weak.length)
+        s += ` 특히 ${weak.join('·')} 영역은 아직 디지털 도구를 도입하지 않은 상태로, 이 부분부터 시작하시기를 권합니다.`;
+    if (strong.length)
+        s += ` 반면 ${strong.join('·')} 영역은 이미 적극적으로 활용하고 계셔서, 다른 영역으로 확대할 여지가 있습니다.`;
+    return s;
+}
+
 function printSelfReport() {
     const i=state.info;
     const g=state.grade;
@@ -615,13 +657,29 @@ function printSelfReport() {
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">기업유형</th><td class="px-3 text-sm" colspan="3">Track ${state.track} · ${DATA.tracks[state.track]?.title||''}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">사업자번호</th><td class="px-3 text-sm">${fmtBizNum(i.biznum)}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm">${new Date().toLocaleDateString('ko-KR')}</td></tr>`;
     document.getElementById('rpt-gauge-wrap').innerHTML=gaugeSection(g);
-    document.getElementById('rpt-comment').innerText=DATA.autoComments[g.lv];
-    const weak=DATA.areas.map(a=>({id:a.id,name:a.name,s:g.scores[a.id]||0})).sort((a,b)=>a.s-b.s).slice(0,3);
-    document.getElementById('rpt-rfp').innerHTML=weak.map(w=>`
-        <div class="border rounded-lg p-4 bg-gray-50 flex items-center gap-3">
-            <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold whitespace-nowrap">${w.name} ${w.s}점</span>
-            <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
-        </div>`).join('');
+    document.getElementById('rpt-comment').innerText=buildSummary(g);
+    document.getElementById('rpt-answers-wrap').innerHTML=answersSection();
+
+    const phL={short:'단기 (3개월 이내)',mid:'중기 (6개월)',long:'장기 (1년+)'};
+    const weak=DATA.areas.map(a=>({id:a.id,name:a.name,icon:a.icon,s:g.scores[a.id]||0})).sort((a,b)=>a.s-b.s).slice(0,3);
+    document.getElementById('rpt-rfp').innerHTML=weak.map((w,i)=>{
+        const s=DATA.solutions[w.id][0];
+        if(!s)return'';
+        return `
+        <div class="border rounded-lg p-4" style="break-inside:avoid">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="bg-[#1e3a5f] text-white text-xs px-2 py-0.5 rounded font-bold">과제 ${i+1}</span>
+                <span class="font-bold text-sm text-gray-800">${w.icon} ${w.name}</span>
+                <span class="text-xs text-gray-400">현재 ${w.s}점 / 5점</span>
+            </div>
+            <div class="border-l-2 border-blue-300 pl-3">
+                <div class="text-sm"><b>${s.name}</b>
+                    <span class="text-xs text-gray-500 ml-1">${phL[s.phase]}</span>
+                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">💰 ${s.budget}</span></div>
+                <div class="text-xs text-gray-500 mt-0.5">${s.desc}</div>
+            </div>
+        </div>`;
+    }).join('');
     // dialog 열기 → 브라우저 최상위 레이어에 표시됨
     const dlg = document.getElementById('report-dialog');
     dlg.showModal();
