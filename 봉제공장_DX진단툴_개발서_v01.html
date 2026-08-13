@@ -54,6 +54,7 @@
     table.t, table.diag { page-break-inside:avoid; }
     figure.shot img { width:auto; max-width:100%; max-height:96mm; margin:0 auto; }
     figure.wide img { width:auto; max-width:100%; max-height:135mm; margin:0 auto; }
+    figure.wide.half img { max-height:105mm; }
   }
 </style>
 </head>
@@ -190,6 +191,25 @@
     <tr><td class="lab">리포트 발행</td><td>화면 출력 및 인쇄(PDF) 발행 — 기업별 1부</td></tr>
   </table>
 
+  <div class="footer">- 4 -</div>
+</div>
+
+<div class="page">
+  <h3 class="sub">3. 종합 분석 보고서</h3>
+  <p class="tx">개별 기업 리포트와 별도로, 진단을 완료한 기업 전체를 집계한 종합 분석 보고서를 발행한다.
+    한 기업에 자가진단과 전문가 진단이 모두 있는 경우 전문가 진단을 대표값으로 삼아
+    <b>진단 '건'이 아닌 '기업' 단위</b>로 집계한다.</p>
+  <table class="t">
+    <tr><th style="width:26%">구성 요소</th><th>내용</th></tr>
+    <tr><td class="lab">진단 개요</td><td>진단 기업 수 · 평균 종합점수 · 자가진단/전문가진단 실시 건수</td></tr>
+    <tr><td class="lab">등급별 분포</td><td>LV1~LV5 구간별 기업 수 분포</td></tr>
+    <tr><td class="lab">영역별 평균</td><td>6개 영역의 평균 점수 — 업종 공통 취약 영역 식별</td></tr>
+    <tr><td class="lab">유형별 분포</td><td>Track A·B·C별 기업 수</td></tr>
+    <tr><td class="lab">인식 격차</td><td>자가진단 점수 대비 전문가 평가 점수의 영역별 차이</td></tr>
+    <tr><td class="lab">우선 개선과제</td><td>기업별 도출 과제의 빈도 집계 — 후속 지원사업 설계 근거</td></tr>
+    <tr><td class="lab">기업별 결과 일람</td><td>기업명 · 유형 · 등급 · 종합점수 · 진단 구분</td></tr>
+  </table>
+
   <h2 class="sec">Ⅴ. 기술 구현</h2>
   <table class="t">
     <tr><th style="width:26%">항목</th><th>내용</th></tr>
@@ -206,13 +226,17 @@
   <div class="sq">기업별 우선 개선과제 도출 → 후속 DX 지원사업(컨설팅·시스템 도입)과 직접 연계</div>
   <div class="sq">봉제 소공인 DX 성숙도 현황(영역별·등급별 분포) 분석을 통한 정책 근거 마련</div>
 
-  <div class="footer">- 4 -</div>
+  <div class="footer">- 5 -</div>
 </div>
 
 <!-- ===== 7. 진단 화면 예시 ===== -->
 <div class="page">
   <h2 class="sec">Ⅶ. 진단 화면 예시 (실제 구동 화면)</h2>
-  <p class="tx">개발된 진단 프로그램의 실제 구동 화면이다. (예시: Track B 전문 제조사 · 종합 16/30점 · LV3 정착)</p>
+  <p class="tx">개발된 진단 프로그램의 실제 구동 화면이다. 기업 대표자가 직접 응답하는 <b>자가진단</b>과
+    진단자가 현장에서 작성하는 <b>전문가 현장진단</b>의 두 계통으로 구성된다.
+    (예시: Track B 전문 제조사 · 종합 16/30점 · LV3 정착)</p>
+
+  <h3 class="sub">1. 기업 자가진단 (대표자 응답 · 약 5분)</h3>
 
   <div class="shots">
     <figure class="shot">
@@ -220,17 +244,35 @@
       <figcaption>① 기업 유형(Track) 선택</figcaption>
     </figure>
     <figure class="shot">
-      <img src="img/cap2_diagnosis.png" alt="진단 문항 화면">
-      <figcaption>② 영역별 진단 문항 (5단계 척도)</figcaption>
+      <img src="img/cap2_diagnosis.png" alt="자가진단 문항 화면">
+      <figcaption>② 6개 영역 자가진단 문항 (3단계 척도)</figcaption>
     </figure>
   </div>
 
   <figure class="wide">
-    <img src="img/cap3_result.png" alt="진단 결과 대시보드">
-    <figcaption>③ 진단 결과 — 레이더·막대 차트, 전문가 의견, 우선 개선과제 자동 산출</figcaption>
+    <img src="img/cap3_result.png" alt="자가진단 결과 화면">
+    <figcaption>③ 자가진단 결과 — 레이더·막대 차트, 등급·요약 자동 산출</figcaption>
   </figure>
 
-  <div class="footer">- 5 -</div>
+  <div class="footer">- 6 -</div>
+</div>
+
+<div class="page">
+  <h3 class="sub">2. 전문가 현장진단 (진단자 작성 · 약 30분)</h3>
+  <p class="tx">자가진단을 제출한 기업 목록에서 대상을 선택하면 기업정보와 자가진단 응답이 자동으로 연계된다.
+    진단자는 6개 영역을 5단계로 독립 평가하고 근본 원인·추천 솔루션·현장 코멘트를 기록한다.</p>
+
+  <figure class="wide half">
+    <img src="img/cap4_expert_area.png" alt="전문가 영역별 평가 화면">
+    <figcaption>④ 영역별 전문가 평가 (5단계 척도) — 근본 원인 분석 · 추천 솔루션 선택</figcaption>
+  </figure>
+
+  <figure class="wide half">
+    <img src="img/cap5_expert_result.png" alt="전문가 진단 결과 화면">
+    <figcaption>⑤ 전문가 진단 결과 — 결과보고서(PDF) 발행 · 결과 데이터(JSON) 저장</figcaption>
+  </figure>
+
+  <div class="footer">- 7 -</div>
 </div>
 
 </body>
