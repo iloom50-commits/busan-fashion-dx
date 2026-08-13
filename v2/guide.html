@@ -94,7 +94,6 @@
             gap: 1rem;
         }
         .pw-box .pw-label { font-size: 0.75rem; font-weight: 700; color: #92400e; }
-        .pw-box .pw-value { font-size: 1.6rem; font-weight: 900; color: #78350f; letter-spacing: 0.1em; }
 
         .steps { list-style: none; }
         .steps li {
@@ -207,7 +206,7 @@
                 </li>
                 <li>
                     <span class="num">2</span>
-                    <div class="text">기업 정보를 입력합니다<div class="sub">기업명, 대표자명, 종업원 수, 주요 매출 형태 선택</div></div>
+                    <div class="text">기업 정보를 입력합니다<div class="sub">기업명, 대표자명, <b>사업자번호</b>, 연락처, 종업원 수, 주요 매출 형태</div></div>
                 </li>
                 <li>
                     <span class="num">3</span>
@@ -247,35 +246,44 @@
             <ul class="steps">
                 <li>
                     <span class="num">1</span>
-                    <div class="text">현장 방문 전 위 URL을 노트북·태블릿에 미리 열어둡니다</div>
+                    <div class="text">위 URL 접속 후 <b>진단자 접속 코드</b>를 입력해 로그인합니다<div class="sub">현장 방문 전 노트북·태블릿에 미리 열어두세요</div></div>
                 </li>
                 <li>
                     <span class="num">2</span>
-                    <div class="text">기업 유형(Track)을 선택하고 기본 정보를 입력합니다<div class="sub">기업명, 대표자, 종업원 수, 사업자번호</div></div>
+                    <div class="text">해당 기업의 <b>자가진단 결과를 불러옵니다</b><div class="sub">화면의 목록에서 선택 / 사업자번호·기업명으로 검색 / 자가진단을 안 한 기업은 '자가진단 없이 시작'</div></div>
                 </li>
                 <li>
                     <span class="num">3</span>
-                    <div class="text">현장 사진을 촬영·업로드합니다<div class="sub">전경 사진, 주요 애로사항 사진 (건너뛰기 가능)</div></div>
+                    <div class="text">기업 유형(Track)을 확인·선택합니다<div class="sub">자가진단에서 선택한 Track이 표시되며, 현장 판단에 따라 변경할 수 있습니다</div></div>
                 </li>
                 <li>
                     <span class="num">4</span>
-                    <div class="text">6개 영역을 5점 척도로 평가합니다<div class="sub">각 영역에서 근본 원인 분석 및 추천 솔루션도 선택</div></div>
+                    <div class="text">기본 정보를 확인·보완합니다<div class="sub">불러온 기업명·대표자·종업원 수가 자동 입력됨 / 사업자번호가 비어 있으면 현장에서 입력</div></div>
                 </li>
                 <li>
                     <span class="num">5</span>
-                    <div class="text">이행 로드맵을 확인·조정합니다<div class="sub">단기(3개월) · 중기(6개월) · 장기(1년+) 과제 배분</div></div>
+                    <div class="text">현장 사진을 촬영·업로드합니다<div class="sub">전경 사진, 주요 애로사항 사진 (건너뛰기 가능)</div></div>
                 </li>
                 <li>
                     <span class="num">6</span>
-                    <div class="text">전문가 종합의견을 작성합니다</div>
+                    <div class="text">6개 영역을 5점 척도로 평가합니다<div class="sub">기업의 자가진단 응답이 참고로 표시됩니다 — 전문가 평가는 독립적으로 판단 / 근본 원인 분석 및 추천 솔루션도 선택</div></div>
                 </li>
                 <li>
                     <span class="num">7</span>
+                    <div class="text">이행 로드맵을 확인·조정합니다<div class="sub">단기(3개월) · 중기(6개월) · 장기(1년+) 과제 배분</div></div>
+                </li>
+                <li>
+                    <span class="num">8</span>
+                    <div class="text">전문가 종합의견을 작성합니다</div>
+                </li>
+                <li>
+                    <span class="num">9</span>
                     <div class="text">최종 리포트를 발행(PDF 출력)합니다<div class="sub">결과는 부산테크노파크에 자동 저장됩니다</div></div>
                 </li>
             </ul>
             <div class="note">
-                ※ 전문가 진단 URL은 컨설턴트에게만 공유하세요. 기업에게는 자가진단 URL(①)을 안내합니다.
+                ※ 전문가 진단 URL은 컨설턴트에게만 공유하세요. 기업에게는 자가진단 URL(①)을 안내합니다.<br>
+                ※ 접속 코드는 이 안내 문서가 아닌 별도 경로로 전달받아 보관하세요.
             </div>
         </div>
     </div>
@@ -300,10 +308,10 @@
             <div class="pw-box">
                 <div>
                     <div class="pw-label">🔐 관리자 비밀번호</div>
-                    <div class="pw-value">busan2026</div>
+                    <div style="font-size:1rem; font-weight:700; color:#78350f;">담당자에게 별도 전달</div>
                 </div>
                 <div style="font-size:0.75rem; color:#92400e; line-height:1.6; margin-left:auto;">
-                    이 페이지를 인쇄하여<br>안전한 곳에 보관하세요
+                    이 안내 페이지는 인터넷에 공개되므로<br>비밀번호를 기재하지 않습니다
                 </div>
             </div>
 
@@ -327,6 +335,7 @@
             </ul>
             <div class="note">
                 ※ 관리자 대시보드 URL과 비밀번호는 외부에 공유하지 마세요.<br>
+                ※ 비밀번호는 이 문서가 아닌 별도 경로로 전달받아 보관하세요.<br>
                 ※ 비밀번호 변경이 필요하면 담당 개발자에게 요청하세요.
             </div>
         </div>

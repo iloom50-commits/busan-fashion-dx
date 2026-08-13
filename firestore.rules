@@ -1,0 +1,77 @@
+rules_version = '2';
+
+// ============================================================================
+// 2026 부산 패션(봉제) 소공인 DX 역량진단 · Firestore 보안규칙
+//
+// [적용 방법]
+//   Firebase 콘솔 > Firestore Database > 규칙 탭에 아래 내용을 붙여넣고 게시
+//   프로젝트: dx-tool-d262e
+//
+// [현재 상태 — 2026-08-13 실측]
+//   인증 없이 읽기·쓰기·수정·삭제가 모두 가능함.
+//   즉 HTML 소스의 Firebase 설정값만 있으면 누구나
+//     - 저장된 모든 기업의 기업명·대표자·연락처·이메일을 읽고
+//     - 가짜 진단 기록을 무제한 생성하고
+//     - 기존 기록을 수정·삭제할 수 있음.
+//   진단자 접속 코드(expert.html)와 관리자 비밀번호(admin.html)는
+//   HTML에 그대로 들어 있어 이 경로를 전혀 막지 못함.
+//
+// [구조적 제약]
+//   이 시스템은 백엔드가 없는 정적 웹앱이다. 따라서 "전문가·관리자만 읽기"를
+//   클라이언트 코드로는 구현할 수 없다. 읽기를 실제로 제한하려면
+//   Firebase Authentication 계정이 필요하다.
+//
+// [단계별 적용]
+//   1단계 (Auth 도입 전) — 아래 read 줄을 `if true`로 두고 나머지만 적용
+//     · 수정·삭제 전면 차단          -> 기존 기록 훼손 방지
+//     · 생성 시 필드 검증            -> 쓰레기 데이터 대량 생성 억제
+//     · 읽기는 여전히 공개           -> 개인정보 노출은 남아 있음
+//
+//   2단계 (Auth 도입 후) — read를 `if request.auth != null`로 전환
+//     · expert.html / admin.html의 로그인을 Firebase Auth 계정으로 교체
+//     · 자가진단 제출(create)은 계속 익명 허용 (기업 대표자는 로그인하지 않음)
+//
+// [주의] Auth를 붙이기 전에 read를 잠그면 전문가 진단의 자가진단 조회와
+//        관리자 대시보드가 즉시 동작하지 않는다. 순서를 지킬 것.
+//
+// [주의] 규칙 게시 후 반드시 자가진단 제출을 1회 테스트할 것.
+//        검증 조건이 실제 저장 필드와 어긋나면 제출이 실패한다.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /diagnoses/{docId} {
+
+      // --- 읽기 ---
+      // 1단계: if true          (Auth 도입 전 — 개인정보 공개 상태)
+      // 2단계: if request.auth != null
+      allow read: if true;
+
+      // --- 생성 --- 자가진단·전문가진단 제출. 익명 허용하되 형식을 검증한다.
+      allow create: if isValidDiagnosis();
+
+      // --- 수정·삭제 --- 클라이언트에서는 전면 차단.
+      // 데이터 정리가 필요하면 Firebase 콘솔에서 직접 수행한다.
+      allow update, delete: if false;
+    }
+
+    // 그 외 모든 경로 차단
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidDiagnosis() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['type', 'timestamp', 'company', 'track', 'scores'])
+          && d.keys().size() <= 25
+          && d.type in ['self', 'expert']
+          && d.company is string && d.company.size() > 0 && d.company.size() <= 100
+          && d.track in ['A', 'B', 'C']
+          && d.scores is map
+          && d.scores.keys().hasAll(['work', 'process', 'quality', 'material', 'basic', 'leader'])
+          // serverTimestamp 강제 — 클라이언트가 임의 시각을 넣지 못하게 한다
+          && request.time == d.timestamp;
+    }
+  }
+}
