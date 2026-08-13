@@ -661,19 +661,29 @@ function applySelf(id) {
 
 function skipLookup() { state.step = 0; render(); }
 
+// 본 사업의 진단 대상은 봉제(임가공) 소공인이므로 Track B를 기본으로 안내한다.
+// 근거: 개발서 Ⅲ-1 · 과업지시서 66행 "봉제 제조사는 Track B 기본 적용"
+// 자가진단에서 고른 값이 있으면 그 값이 우선한다 — 기업이 스스로 밝힌 유형이 더 정확하다.
+const DEFAULT_TRACK = 'B';
+
 function renderTrack(el) {
-    const sug = state.selfData ? state.selfData.track : null;
+    const fromSelf = state.selfData ? state.selfData.track : null;
+    const sug = fromSelf || DEFAULT_TRACK;
+    const badge = fromSelf ? '자가진단' : '기본';
     el.innerHTML = `
     <div class="q-header text-center">
         <div class="text-xs font-bold text-green-600 uppercase tracking-widest mb-2">STEP 2</div>
         <h2 class="text-2xl font-bold text-gray-800">기업 유형을 선택해주세요</h2>
         <p class="text-gray-400 text-sm mt-1">유형에 따라 진단 문항이 맞춤 설정됩니다</p>
-        ${sug?`<div class="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-xs font-bold mt-3">💡 자가진단 시 선택: Track ${sug}</div>`:''}
+        <div class="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-xs font-bold mt-3">
+            💡 ${fromSelf ? `자가진단 시 선택: Track ${fromSelf}` : '봉제(임가공) 소공인은 Track B 기본 적용'}
+        </div>
     </div>
     <div class="p-8 grid grid-cols-3 gap-4">
         ${Object.keys(DATA.tracks).map(k => `
-            <div onclick="setTrack('${k}')" class="relative border-2 ${k===sug?'border-green-300 bg-green-50':'border-gray-200'} rounded-xl p-6 text-center cursor-pointer hover:border-green-500 hover:shadow-lg transition-all group">
-                ${k===sug?'<span class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full">자가진단</span>':''}
+            <div onclick="setTrack('${k}')" data-track="${k}"
+                 class="track-card relative border-2 ${k===sug?'recommended border-green-300 bg-green-50':'border-gray-200'} rounded-xl p-6 text-center cursor-pointer hover:border-green-500 hover:shadow-lg transition-all group">
+                ${k===sug?`<span class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full">${badge}</span>`:''}
                 <div class="text-4xl mb-3">${DATA.tracks[k].icon}</div>
                 <div class="font-bold text-green-700 text-sm">Track ${k}</div>
                 <div class="font-bold text-gray-800 mt-1">${DATA.tracks[k].title}</div>
