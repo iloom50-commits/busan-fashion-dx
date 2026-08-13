@@ -28,8 +28,9 @@ FAKE_SELF = {
 }
 
 
-def expert_login(page, code="2026"):
-    """진단자 로그인 게이트를 통과한다."""
+def expert_login(page, code="2026", name="검증진단자"):
+    """진단자 로그인 게이트를 통과한다. 진단자 이름과 접속 코드가 모두 필요하다."""
+    page.fill("#expert-name", name)
     page.fill("#pw-input", code)
     page.click("#auth-screen >> text=확인")
     page.wait_for_selector("text=자가진단 결과 불러오기")

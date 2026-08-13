@@ -58,6 +58,8 @@
         dialog#report-dialog::backdrop { background: rgba(0,0,0,0.6); }
 
         @media print {
+            /* 브라우저 기본 여백에 좌우되지 않도록 지면 여백을 못박는다 */
+            @page { size: A4; margin: 14mm; }
             body > *:not(dialog) { display: none !important; }
             dialog#report-dialog {
                 display: block !important; position: static !important;
@@ -154,6 +156,10 @@ firebase.initializeApp({
     appId: "1:145376564416:web:2ad06b81bb48ecf81f8925"
 });
 const db = firebase.firestore();
+
+// 차트도 본문과 같은 폰트를 쓴다. 지정하지 않으면 Chart.js 기본 폰트로 렌더되어
+// 한글만 다른 글꼴로 나온다.
+Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
 
 // 사업자번호: 저장·대조는 숫자 10자리로 정규화, 표시만 하이픈 형식
 function normBizNum(v) { return String(v||'').replace(/\D/g,''); }

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -55,6 +55,8 @@
         dialog#report-dialog::backdrop { background: rgba(0,0,0,0.6); }
 
         @media print {
+            /* 브라우저 기본 여백에 좌우되지 않도록 지면 여백을 못박는다 */
+            @page { size: A4; margin: 14mm; }
             body > *:not(dialog) { display: none !important; }
             dialog#report-dialog {
                 display: block !important; position: static !important;
@@ -75,11 +77,15 @@
         <div class="text-4xl mb-4">🔐</div>
         <h2 class="text-xl font-bold mb-1">진단자 로그인</h2>
         <p class="text-xs text-gray-400 mb-5">현장진단 전문가 전용</p>
-        <input id="pw-input" type="password" placeholder="접속 코드 입력"
+        <input id="expert-name" type="text" placeholder="진단자 이름"
+            class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm mb-2 text-center"
+            onkeydown="if(event.key==='Enter')document.getElementById('pw-input').focus()">
+        <input id="pw-input" type="password" placeholder="접속 코드"
             class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm mb-3 text-center"
             onkeydown="if(event.key==='Enter')checkPw()">
         <button onclick="checkPw()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-bold text-sm">확인</button>
-        <p id="pw-err" class="text-red-500 text-xs mt-2 hidden">접속 코드가 올바르지 않습니다</p>
+        <p id="pw-err" class="text-red-500 text-xs mt-2 hidden"></p>
+        <p class="text-xs text-gray-300 mt-3 leading-relaxed">진단자 이름은 결과보고서에 기재됩니다</p>
     </div>
 </div>
 
@@ -136,11 +142,11 @@
         </div>
         <div id="rpt-detail-wrap" class="page-break"></div>
         <div class="page-break">
-            <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-green-500 pl-3 mb-4">이행 로드맵</h3>
+            <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-green-500 pl-3 mb-3">이행 로드맵</h3>
             <div class="grid grid-cols-3 gap-4 mb-6" id="rpt-roadmap"></div>
         </div>
         <div>
-            <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-red-500 pl-3 mb-4">맞춤형 기술 수요 (RFP)</h3>
+            <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-red-500 pl-3 mb-3">맞춤형 기술 수요 (RFP)</h3>
             <div id="rpt-rfp" class="space-y-3"></div>
         </div>
         <div id="rpt-photos-wrap"></div>
@@ -149,15 +155,33 @@
 
 <script>
 const ACCESS_CODE = '2026';
+const EXPERT_NAME_KEY = 'dx-expert-name';
+
+// 차트도 본문과 같은 폰트를 쓴다. 지정하지 않으면 Chart.js 기본 폰트로 렌더되어
+// 한글만 다른 글꼴로 나온다.
+Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
 
 function checkPw() {
-    if (document.getElementById('pw-input').value.trim() === ACCESS_CODE) {
-        document.getElementById('auth-screen').classList.add('hidden');
-        render();
-    } else {
-        document.getElementById('pw-err').classList.remove('hidden');
-        document.getElementById('pw-input').value = '';
+    const name = document.getElementById('expert-name').value.trim();
+    const code = document.getElementById('pw-input').value.trim();
+    const err  = document.getElementById('pw-err');
+    if (!name) {
+        err.innerText = '진단자 이름을 입력해주세요';
+        err.classList.remove('hidden');
+        document.getElementById('expert-name').focus();
+        return;
     }
+    if (code !== ACCESS_CODE) {
+        err.innerText = '접속 코드가 올바르지 않습니다';
+        err.classList.remove('hidden');
+        document.getElementById('pw-input').value = '';
+        return;
+    }
+    state.expertName = name;
+    try { localStorage.setItem(EXPERT_NAME_KEY, name); } catch(e) {}
+    err.classList.add('hidden');
+    document.getElementById('auth-screen').classList.add('hidden');
+    render();
 }
 
 firebase.initializeApp({
@@ -204,6 +228,7 @@ async function saveDiagnosis() {
             company: state.info.comp,
             emp: state.info.emp || '',
             bizNum: normBizNum(state.info.biz),
+            expertName: state.expertName || '',   // 진단 수행자 기록 (과업 산출물 요건)
             selfRef: state.selfRef || null,
             selfScores: state.selfScores || null,
             track: state.track,
@@ -321,7 +346,7 @@ const STEPS = [
 ];
 
 let state = {
-    step:'lookup', track:null,
+    step:'lookup', track:null, expertName:'',
     info:{}, scores:{}, causes:{}, solutions:{}, comments:{},
     roadmap:{ short:[], mid:[], long:[], _built:false },
     opinion:'', grade:null, saved:false,
@@ -896,7 +921,9 @@ function saveOpinion() {
 }
 
 function restart() {
-    state = { step:'lookup', track:null, info:{}, scores:{}, causes:{}, solutions:{}, comments:{},
+    const who = state.expertName;   // 같은 진단자가 이어서 다음 기업을 진단한다
+    state = { step:'lookup', track:null, expertName:who,
+              info:{}, scores:{}, causes:{}, solutions:{}, comments:{},
               roadmap:{short:[],mid:[],long:[],_built:false}, opinion:'', grade:null, saved:false,
               selfRef:null, selfData:null, selfScores:null, photos:{} };
     selfCache = null;  // 다음 기업 진단 시 최신 자가진단 목록을 다시 조회
@@ -997,6 +1024,7 @@ function drawCharts(prefix, scoresObj) {
 function exportExpertResult() {
     const data = JSON.stringify({
         info: state.info,
+        expertName: state.expertName,
         track: state.track,
         scores: state.scores,
         causes: state.causes,
@@ -1022,7 +1050,7 @@ function printExpertReport() {
         `<tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold w-24">기업명</th><td class="px-3 text-sm">${i.comp}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold w-24">대표자</th><td class="px-3 text-sm">${i.ceo||'-'}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">종업원수</th><td class="px-3 text-sm">${i.emp||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">사업자번호</th><td class="px-3 text-sm">${i.biz||'-'}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">기업유형</th><td class="px-3 text-sm" colspan="3">Track ${state.track} · ${DATA.tracks[state.track]?.title||''}</td></tr>
-         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm" colspan="3">${new Date().toLocaleDateString('ko-KR')}</td></tr>`;
+         <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm">${new Date().toLocaleDateString('ko-KR')}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">진단자</th><td class="px-3 text-sm font-bold">${state.expertName||'-'}</td></tr>`;
     document.getElementById('rpt-comment').innerText=state.opinion;   // 등급은 게이지 섹션에 표시한다
     const allById={};
     DATA.areas.forEach(a=>DATA.solutions[a.id].forEach(s=>allById[s.id]=s));
@@ -1209,7 +1237,7 @@ function detailSection(g) {
     }).join('');
     return `
     <div id="rpt-detail" class="mb-6">
-        <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-orange-500 pl-3 mb-4">영역별 상세 진단</h3>
+        <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-orange-500 pl-3 mb-3">영역별 상세 진단</h3>
         ${blocks}
     </div>`;
 }
@@ -1223,7 +1251,7 @@ function photosSection() {
         </div>`).join('');
     if (!imgs) return '';
     return `
-    <div id="rpt-photos" class="mt-8" style="break-inside:avoid">
+    <div id="rpt-photos" class="mb-6" style="break-inside:avoid">
         <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-gray-400 pl-3 mb-3">현장 사진</h3>
         <div class="flex justify-between">${imgs}</div>
     </div>`;
@@ -1252,7 +1280,17 @@ function savePDF() {
 }
 
 // 진단자 로그인 통과 후에만 render() 호출 — checkPw() 참조
-document.getElementById('pw-input').focus();
+// 진단자 이름은 기기에 남겨 다음 기업 진단 때 다시 입력하지 않게 한다.
+(function () {
+    let saved = '';
+    try { saved = localStorage.getItem(EXPERT_NAME_KEY) || ''; } catch(e) {}
+    if (saved) {
+        document.getElementById('expert-name').value = saved;
+        document.getElementById('pw-input').focus();
+    } else {
+        document.getElementById('expert-name').focus();
+    }
+})();
 </script>
 </body>
 </html>
