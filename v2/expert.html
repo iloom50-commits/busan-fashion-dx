@@ -122,17 +122,16 @@
             <p class="text-gray-400 text-sm mt-1">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</p>
         </div>
         <table class="w-full mb-6 border-t-2 border-gray-800 text-sm"><tbody id="rpt-info"></tbody></table>
-        <div class="flex justify-between mb-6" style="height:220px">
+        <div class="flex justify-between mb-6" style="height:290px">
             <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">역량 균형도</h3><canvas id="rpt-radar"></canvas></div>
             <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">영역별 점수</h3><canvas id="rpt-bar"></canvas></div>
         </div>
+        <div id="rpt-gauge-wrap"></div>
+        <div id="rpt-strength-wrap"></div>
         <div id="rpt-compare-wrap"></div>
-        <div class="bg-gray-50 p-5 rounded border mb-6">
-            <div class="flex items-center gap-2 mb-2">
-                <span class="bg-green-900 text-white px-2 py-0.5 text-xs font-bold rounded">종합 등급</span>
-                <span id="rpt-grade" class="font-bold text-green-900"></span>
-            </div>
-            <p id="rpt-comment" class="text-sm text-gray-700 leading-relaxed border-t pt-3 mt-2"></p>
+        <div class="mb-6">
+            <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-green-500 pl-3 mb-3">전문가 종합의견</h3>
+            <p id="rpt-comment" class="text-sm text-gray-700 leading-relaxed bg-gray-50 p-5 rounded border"></p>
         </div>
         <div id="rpt-causes-wrap"></div>
         <div class="page-break">
@@ -914,22 +913,68 @@ function prev() {
 }
 
 // ===== 차트 =====
+// 막대에 값을 직접 찍는다. 색만으로 값을 전달하면 적록색약과 흑백 인쇄에서 정보가 사라진다.
+const valueLabels = {
+    id: 'valueLabels',
+    afterDatasetsDraw(chart) {
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.font = 'bold 11px "Noto Sans KR", sans-serif';
+        ctx.fillStyle = '#374151';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        chart.getDatasetMeta(0).data.forEach((bar, i) => {
+            ctx.fillText(`${chart.data.datasets[0].data[i]}점`, bar.x + 6, bar.y);
+        });
+        ctx.restore();
+    }
+};
+
+// 점수(크기)는 한 색조의 농담으로 표현한다. 흑백 인쇄에서도 농담 차이가 남는다.
+const BAR_RAMP = {1:'#bbf7d0', 2:'#86efac', 3:'#4ade80', 4:'#22c55e', 5:'#15803d'};
+
+// 계열색은 팔레트 검증기 통과값 (CVD ΔE 30.3)
+const C_SELF = '#2563eb', C_EXPERT = '#16a34a';
+
 function drawCharts(prefix, scoresObj) {
     const labels=DATA.areas.map(a=>a.name);
     const data  =DATA.areas.map(a=>scoresObj[a.id]||0);
     // 리포트 차트는 애니메이션을 끈다. 그리는 도중 이미지로 바꾸면 비어 나온다.
     const anim  =prefix==='rpt'?{duration:0}:{};
     ['radar','bar'].forEach(t=>{const k=`${prefix}-${t}`;if(charts[k]){charts[k].destroy();delete charts[k];}});
+
+    const datasets=[{
+        label:'전문가 평가', data,
+        borderColor:C_EXPERT, backgroundColor:'rgba(22,163,74,0.10)',
+        pointBackgroundColor:C_EXPERT, pointRadius:4, borderWidth:2
+    }];
+    // 자가진단이 있으면 겹쳐 그린다. 격차가 면적 차이로 드러난다.
+    // 점선을 함께 써서 색 없이도 두 계열이 구분되게 한다.
+    if (prefix==='rpt' && state.selfScores) datasets.unshift({
+        label:'자가진단', data:DATA.areas.map(a=>state.selfScores[a.id]||0),
+        borderColor:C_SELF, backgroundColor:'rgba(37,99,235,0.06)',
+        pointBackgroundColor:C_SELF, pointRadius:4, borderWidth:2, borderDash:[5,3]
+    });
+
     charts[`${prefix}-radar`]=new Chart(document.getElementById(`${prefix}-radar`),{
         type:'radar',
-        data:{labels,datasets:[{data,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,0.08)',pointBackgroundColor:'#16a34a',pointRadius:3}]},
-        options:{animation:anim,scales:{r:{min:0,max:5,ticks:{display:false},grid:{color:'#e5e7eb'}}},plugins:{legend:false}}
+        data:{labels,datasets},
+        options:{animation:anim,
+            scales:{r:{min:0,max:5,
+                ticks:{display:true,stepSize:1,showLabelBackdrop:false,color:'#9ca3af',font:{size:9}},
+                grid:{color:'#e5e7eb'},pointLabels:{font:{size:10}}}},
+            plugins:{legend:{display:datasets.length>1,position:'bottom',
+                labels:{boxWidth:12,font:{size:10}}}}}
     });
+
     const sorted=DATA.areas.map(a=>({name:a.name,s:scoresObj[a.id]||0})).sort((a,b)=>a.s-b.s);
     charts[`${prefix}-bar`]=new Chart(document.getElementById(`${prefix}-bar`),{
         type:'bar',
-        data:{labels:sorted.map(d=>d.name),datasets:[{data:sorted.map(d=>d.s),backgroundColor:sorted.map(d=>d.s<3?'#ef4444':'#16a34a'),borderRadius:3}]},
-        options:{animation:anim,indexAxis:'y',scales:{x:{max:5,grid:{color:'#f1f5f9'}}},plugins:{legend:false}}
+        plugins:[valueLabels],
+        data:{labels:sorted.map(d=>d.name),datasets:[{data:sorted.map(d=>d.s),
+            backgroundColor:sorted.map(d=>BAR_RAMP[d.s]||'#e5e7eb'),borderRadius:3}]},
+        options:{animation:anim,indexAxis:'y',layout:{padding:{right:28}},
+            scales:{x:{max:5,grid:{color:'#f1f5f9'}}},plugins:{legend:false}}
     });
 }
 
@@ -962,8 +1007,7 @@ function printExpertReport() {
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">종업원수</th><td class="px-3 text-sm">${i.emp||'-'}</td><th class="text-left bg-gray-50 px-3 text-xs font-bold">사업자번호</th><td class="px-3 text-sm">${i.biz||'-'}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">기업유형</th><td class="px-3 text-sm" colspan="3">Track ${state.track} · ${DATA.tracks[state.track]?.title||''}</td></tr>
          <tr class="border-b"><th class="text-left py-2 bg-gray-50 px-3 text-xs font-bold">진단일</th><td class="px-3 text-sm" colspan="3">${new Date().toLocaleDateString('ko-KR')}</td></tr>`;
-    document.getElementById('rpt-grade').innerText=`${g.txt}  (${Object.values(g.scores).reduce((a,b)=>a+b,0)}점 / 30점)`;
-    document.getElementById('rpt-comment').innerText=state.opinion;
+    document.getElementById('rpt-comment').innerText=state.opinion;   // 등급은 게이지 섹션에 표시한다
     const allById={};
     DATA.areas.forEach(a=>DATA.solutions[a.id].forEach(s=>allById[s.id]=s));
     const phL={short:'단기 (3개월)',mid:'중기 (6개월)',long:'장기 (1년+)'};
@@ -983,7 +1027,9 @@ function printExpertReport() {
             <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
         </div>`).join('');
 
-    document.getElementById('rpt-compare-wrap').innerHTML = compareSection(g);
+    document.getElementById('rpt-gauge-wrap').innerHTML    = gaugeSection(g);
+    document.getElementById('rpt-strength-wrap').innerHTML = strengthSection(g);
+    document.getElementById('rpt-compare-wrap').innerHTML  = compareSection(g);
     document.getElementById('rpt-causes-wrap').innerHTML  = causesSection();
     document.getElementById('rpt-photos-wrap').innerHTML  = photosSection();
 
@@ -991,6 +1037,55 @@ function printExpertReport() {
     // 숨긴 채로 그리면 0x0이 되어 차트가 깨진다.
     document.getElementById('report-dialog').showModal();
     setTimeout(()=>{ drawCharts('rpt', g.scores); }, 150);
+}
+
+// 등급 정의 — renderResult()의 점수 구간과 일치해야 한다
+const GRADES = [
+    {lv:1, name:'기초',   range:'6~9점',   desc:'구두 전달과 수기 기록에 의존하며 기록 체계가 갖춰지지 않은 단계'},
+    {lv:2, name:'도입',   range:'10~14점', desc:'수기와 디지털 도구가 혼재하며 부분적으로 기록을 남기기 시작한 단계'},
+    {lv:3, name:'정착',   range:'15~19점', desc:'엑셀·메신저를 중심으로 주요 업무가 디지털로 공유되는 단계'},
+    {lv:4, name:'고도화', range:'20~24점', desc:'클라우드·협업툴을 적극 활용하며 일부 시스템이 연동된 단계'},
+    {lv:5, name:'선도',   range:'25~30점', desc:'ERP·MES 기반으로 데이터에 근거해 의사결정이 이루어지는 단계'}
+];
+
+// 현재 등급을 5단계 눈금 위 '위치'로 보여준다. 색이 아닌 위치·기호로 표시해 흑백에서도 읽힌다.
+function gaugeSection(g) {
+    const total = Object.values(g.scores).reduce((a,b)=>a+b,0);
+    const cur = GRADES[g.lv-1];
+    return `
+    <div id="rpt-gauge" class="mb-6">
+        <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-[#14532d] pl-3 mb-3">종합 등급 판정</h3>
+        <div class="flex gap-1">
+            ${GRADES.map(x=>`
+            <div class="flex-1 text-center pt-2 border-t-4 ${x.lv===g.lv?'border-[#14532d] bg-gray-50':'border-gray-200'}">
+                <div class="text-xs font-bold ${x.lv===g.lv?'text-[#14532d]':'text-gray-300'}">${x.lv===g.lv?'▼ ':''}LV${x.lv}</div>
+                <div class="text-xs ${x.lv===g.lv?'font-bold text-gray-800':'text-gray-400'}">${x.name}</div>
+                <div class="text-gray-400" style="font-size:10px">${x.range}</div>
+            </div>`).join('')}
+        </div>
+        <p class="text-sm text-gray-700 mt-3 leading-relaxed">
+            <b class="text-[#14532d]">LV${g.lv}. ${cur.name} (${total}점 / 30점)</b> — ${cur.desc}
+        </p>
+    </div>`;
+}
+
+// 강점·취약을 글자로도 남긴다. 막대 색만으로는 흑백 인쇄에서 구분되지 않는다.
+function strengthSection(g) {
+    const arr = DATA.areas.map(a=>({name:a.name, icon:a.icon, s:g.scores[a.id]||0}));
+    const weak   = arr.filter(x=>x.s<=2).sort((a,b)=>a.s-b.s);
+    const strong = arr.filter(x=>x.s>=4).sort((a,b)=>b.s-a.s);
+    const cell = (title, items, empty) => `
+        <div class="w-[49%] border rounded-lg p-4">
+            <p class="text-xs font-bold text-gray-500 mb-2">${title}</p>
+            ${items.length ? items.map(x=>`
+                <div class="text-sm text-gray-800 mb-1">${x.icon} ${x.name} <span class="text-gray-400">${x.s}점</span></div>`).join('')
+              : `<p class="text-sm text-gray-300">${empty}</p>`}
+        </div>`;
+    return `
+    <div id="rpt-strength" class="flex justify-between mb-6">
+        ${cell('취약 영역 (2점 이하)', weak, '해당 없음')}
+        ${cell('강점 영역 (4점 이상)', strong, '해당 없음')}
+    </div>`;
 }
 
 // 자가진단(사장님)과 전문가 평가의 격차 — 이 사업의 핵심 근거 자료
