@@ -350,10 +350,34 @@ function renderLookup(el) {
             </div>
         </div>
         <div id="lk-result"></div>
+
+        <div class="border-t pt-4">
+            <div class="flex items-center mb-2">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">최근 자가진단 <span id="lk-count" class="text-gray-300"></span></p>
+                <button onclick="selfCache=null;loadRecentList()" class="ml-auto text-xs text-gray-400 underline">새로고침</button>
+            </div>
+            <div id="lk-list" style="max-height:340px;overflow-y:auto"></div>
+        </div>
     </div>
     <div class="px-8 pb-6 flex justify-end">
         <button onclick="skipLookup()" class="text-sm text-gray-400 underline">자가진단 없이 시작 →</button>
     </div>`;
+    loadRecentList();
+}
+
+async function loadRecentList() {
+    const box = document.getElementById('lk-list');
+    if (!box) return;
+    box.innerHTML = '<p class="text-xs text-gray-400 py-3">불러오는 중...</p>';
+    try {
+        const list = (await fetchSelfList()).slice().sort((a,b) => tsMillis(b.timestamp) - tsMillis(a.timestamp));
+        document.getElementById('lk-count').innerText = `${list.length}건`;
+        box.innerHTML = list.length
+            ? list.map(h => selfCard(h, false, false)).join('')
+            : '<p class="text-xs text-gray-400 py-3">저장된 자가진단이 없습니다.</p>';
+    } catch(e) {
+        box.innerHTML = `<p class="text-xs text-red-500 py-3">목록 불러오기 실패: ${e.message}</p>`;
+    }
 }
 
 function lkMsg(cls, html) { document.getElementById('lk-result').innerHTML =
@@ -387,18 +411,23 @@ function renderHits(hits, label) {
         return;
     }
     hits.sort((a,b) => tsMillis(b.timestamp) - tsMillis(a.timestamp));
-    document.getElementById('lk-result').innerHTML = hits.map((h,idx) => `
-        <div class="border rounded-lg p-4 mb-2 ${idx===0?'border-green-300 bg-green-50':'border-gray-200'}">
+    document.getElementById('lk-result').innerHTML =
+        hits.map((h,idx) => selfCard(h, idx===0, idx===0 && hits.length>1)).join('')
+        + (hits.length>1 ? `<p class="text-xs text-gray-400 mt-1">${hits.length}건이 조회되었습니다. 최신 결과 사용을 권장합니다.</p>` : '');
+}
+
+function selfCard(h, highlight, latest) {
+    return `
+        <div class="border rounded-lg p-4 mb-2 ${highlight?'border-green-300 bg-green-50':'border-gray-200'}">
             <div class="flex items-center justify-between gap-3">
                 <div class="min-w-0">
-                    <div class="font-bold text-gray-800">${h.company||'-'}${idx===0&&hits.length>1?' <span class="text-xs text-green-700">(최신)</span>':''}</div>
+                    <div class="font-bold text-gray-800">${h.company||'-'}${latest?' <span class="text-xs text-green-700">(최신)</span>':''}</div>
                     <div class="text-xs text-gray-500 mt-0.5">${h.ceo||'-'} · ${h.emp||'-'} · Track ${h.track||'-'} · ${h.gradeTxt||'-'}${h.totalScore!=null?` (${h.totalScore}점)`:''}</div>
-                    <div class="text-xs text-gray-400 mt-0.5">${fmtBizNum(h.bizNum)} · ${tsText(h.timestamp)}</div>
+                    <div class="text-xs text-gray-400 mt-0.5">${h.bizNum?fmtBizNum(h.bizNum):'<span class="text-orange-500">사업자번호 없음</span>'} · ${tsText(h.timestamp)}</div>
                 </div>
                 <button onclick="applySelf('${h.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap flex-shrink-0">이 결과로 시작 →</button>
             </div>
-        </div>`).join('')
-        + (hits.length>1 ? `<p class="text-xs text-gray-400 mt-1">${hits.length}건이 조회되었습니다. 최신 결과 사용을 권장합니다.</p>` : '');
+        </div>`;
 }
 
 function applySelf(id) {
@@ -408,7 +437,7 @@ function applySelf(id) {
     state.selfData   = d;
     state.selfScores = d.scores || null;
     state.info = { comp:d.company||'', ceo:d.ceo||'', emp:d.emp||'',
-                   biz:fmtBizNum(d.bizNum), phone:d.phone||'', email:d.email||'' };
+                   biz:d.bizNum?fmtBizNum(d.bizNum):'', phone:d.phone||'', email:d.email||'' };
     state.track = d.track || null;
     document.getElementById('hd-company').innerText = state.info.comp;
     document.getElementById('hd-company').classList.remove('hidden');
