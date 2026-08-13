@@ -147,13 +147,16 @@
   </table>
 
   <h3 class="sub">5. 종합 등급(레벨) 산정</h3>
-  <p class="tx">6개 영역 합산(30점 만점)으로 4개 등급을 자동 산정한다.</p>
+  <p class="tx">6개 영역 합산(6~30점)으로 5개 등급을 자동 산정한다.
+    최저점(6점, 전 영역 미도입)과 14점(절반 수준 디지털화)을 같은 등급으로 묶으면
+    최하위 기업의 개선 시급성이 드러나지 않으므로 LV1을 별도로 둔다.</p>
   <table class="t">
     <tr><th style="width:25%">종합 점수</th><th style="width:25%">등급</th><th>의미</th></tr>
     <tr><td class="c">25 ~ 30점</td><td class="c">LV5 선도</td><td>시스템 기반 디지털 운영 정착</td></tr>
     <tr><td class="c">20 ~ 24점</td><td class="c">LV4 고도화</td><td>클라우드/협업 기반 전환 진행</td></tr>
     <tr><td class="c">15 ~ 19점</td><td class="c">LV3 정착</td><td>엑셀·메신저 등 부분 디지털화</td></tr>
-    <tr><td class="c">14점 이하</td><td class="c">LV2 도입</td><td>수기·구두 중심, 디지털 도입 초기</td></tr>
+    <tr><td class="c">10 ~ 14점</td><td class="c">LV2 도입</td><td>수기와 디지털 도구가 혼재하는 초기 단계</td></tr>
+    <tr><td class="c">6 ~ 9점</td><td class="c">LV1 기초</td><td>구두 전달·수기 기록 중심, 기록 체계 미비</td></tr>
   </table>
 
   <div class="footer">- 3 -</div>
@@ -178,9 +181,10 @@
   <h3 class="sub">2. 진단 결과 리포트 구성</h3>
   <table class="t">
     <tr><th style="width:26%">구성 요소</th><th>내용</th></tr>
-    <tr><td class="lab">종합 점수·등급</td><td>30점 만점 합산 점수 및 LV2~LV5 등급 자동 표시</td></tr>
-    <tr><td class="lab">레이더(Radar) 차트</td><td>6대 영역 균형도를 한눈에 시각화</td></tr>
-    <tr><td class="lab">막대(Bar) 차트</td><td>영역별 점수 비교 — 강·약점 식별</td></tr>
+    <tr><td class="lab">종합 점수·등급</td><td>30점 만점 합산 점수 및 LV1~LV5 등급 자동 표시(5단계 눈금으로 위치 표기)</td></tr>
+    <tr><td class="lab">레이더(Radar) 차트</td><td>6대 영역 균형도를 한눈에 시각화. 자가진단 결과가 있으면 전문가 평가와 겹쳐 그려 격차를 표시</td></tr>
+    <tr><td class="lab">막대(Bar) 차트</td><td>영역별 점수 비교 — 강·약점 식별. 각 막대에 점수를 직접 표기하여 흑백 인쇄·색각 이상에서도 판독 가능</td></tr>
+    <tr><td class="lab">영역별 상세 진단</td><td>영역마다 진단 문항 · 현재 수준 · 근본 원인 · 전문가 코멘트 · 권고 솔루션(예산·도입시기)을 한 묶음으로 제시</td></tr>
     <tr><td class="lab">전문가 의견</td><td>진단 전문가가 직접 작성한 종합 의견 리포트 반영</td></tr>
     <tr><td class="lab">우선 개선과제(RFP)</td><td>취약 영역 기반 개선과제 자동 제안(디지털 작업지시서·모바일 공정관리·품질 이력추적·바코드 재고·데이터 컨설팅·CEO 교육)</td></tr>
     <tr><td class="lab">리포트 발행</td><td>화면 출력 및 인쇄(PDF) 발행 — 기업별 1부</td></tr>
@@ -192,8 +196,9 @@
     <tr><td class="lab">구동 형태</td><td>웹 기반(브라우저) 단일 페이지 애플리케이션 — 별도 설치 불필요</td></tr>
     <tr><td class="lab">사용 환경</td><td>현장 노트북/태블릿에서 즉시 사용, 인터넷 브라우저로 실행</td></tr>
     <tr><td class="lab">화면/스타일</td><td>Tailwind CSS 기반 반응형 UI, 진행 스테퍼 제공</td></tr>
-    <tr><td class="lab">결과 시각화</td><td>Chart.js 기반 레이더·막대 차트 자동 생성</td></tr>
-    <tr><td class="lab">출력</td><td>브라우저 인쇄 기능을 통한 PDF 리포트 발행(인쇄 전용 레이아웃 적용)</td></tr>
+    <tr><td class="lab">결과 시각화</td><td>레이더 차트는 Chart.js로 생성. 막대 차트는 HTML로 직접 렌더링하여 본문과 동일한 글꼴·간격을 적용하고, 인쇄 시 값 표기가 유실되지 않도록 함</td></tr>
+    <tr><td class="lab">출력</td><td>브라우저 인쇄 기능을 통한 PDF 리포트 발행(A4 여백 고정, 인쇄 전용 레이아웃 적용)</td></tr>
+    <tr><td class="lab">데이터 보관</td><td>클라우드 데이터베이스에 진단 결과 저장. 대표자명·연락처·이메일은 저장하지 않고 결과보고서 출력에만 사용</td></tr>
   </table>
 
   <h2 class="sec">Ⅵ. 활용 방안 및 기대효과</h2>

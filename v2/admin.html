@@ -18,6 +18,39 @@
         tr:hover td { background: #f8fafc; }
         select { border: 1px solid #e2e8f0; border-radius: 7px; padding: 0.4rem 0.75rem; font-size: 0.82rem; background: white; }
         .badge { display: inline-flex; align-items: center; padding: 0.15rem 0.55rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; }
+
+        /* 막대는 HTML로 그린다 — 리포트와 같은 방식 */
+        .bar-row   { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+        .bar-row:last-child { margin-bottom: 0; }
+        .bar-name  { width: 88px; flex: none; font-size: 12px; color: #374151; text-align: right; }
+        .bar-track { flex: 1; height: 11px; background: #eef2f6; border-radius: 2px; overflow: hidden; }
+        .bar-fill  { display: block; height: 100%; border-radius: 0 2px 2px 0; }
+        .bar-val   { width: 62px; flex: none; font-size: 12px; font-weight: 700; color: #111827; text-align: right; }
+
+        dialog#sum-dialog {
+            border: none; padding: 0; border-radius: 16px;
+            width: min(860px, 95vw); max-height: 96vh; height: 96vh;
+            overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+        }
+        dialog#sum-dialog::backdrop { background: rgba(0,0,0,0.6); }
+        #sum-dialog h3 { font-weight: 700; font-size: 16px; color: #1e3a5f;
+            border-left: 4px solid #1e3a5f; padding-left: 12px; margin-bottom: 12px; }
+        #sum-dialog section { margin-bottom: 26px; break-inside: avoid; }
+        #sum-dialog table { width: 100%; border-top: 2px solid #1f2937; }
+        #sum-dialog thead th { background: #f8fafc; font-size: 11px; padding: 8px 10px; }
+        #sum-dialog tbody td { font-size: 12.5px; padding: 8px 10px; }
+
+        @media print {
+            @page { size: A4; margin: 14mm; }
+            body > *:not(dialog) { display: none !important; }
+            dialog#sum-dialog {
+                display: block !important; position: static !important;
+                width: 100% !important; max-height: none !important; height: auto !important;
+                box-shadow: none !important; border-radius: 0 !important; overflow: visible !important;
+            }
+            dialog#sum-dialog::backdrop { display: none !important; }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -46,6 +79,7 @@
         </div>
         <div class="flex items-center gap-3">
             <button onclick="loadData()" class="bg-blue-600 hover:bg-blue-700 px-4 py-1.5 rounded-lg text-sm font-bold">🔄 새로고침</button>
+            <button onclick="openSummary()" class="bg-white text-[#1e3a5f] hover:bg-blue-50 px-4 py-1.5 rounded-lg text-sm font-bold">📑 종합 분석 보고서</button>
             <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 px-4 py-1.5 rounded-lg text-sm font-bold">📥 CSV 내보내기</button>
         </div>
     </header>
@@ -154,6 +188,18 @@
         </div>
     </div>
 </div>
+
+<!-- 종합 분석 보고서 (과업지시서 76·80행) -->
+<dialog id="sum-dialog">
+    <div class="no-print flex items-center justify-between px-6 py-4 border-b bg-gray-50 sticky top-0 z-10" style="border-radius:16px 16px 0 0;">
+        <span class="font-bold text-gray-700">📑 종합 분석 보고서 미리보기</span>
+        <div class="flex gap-2">
+            <button onclick="window.print()" class="bg-[#1e3a5f] text-white px-5 py-2 rounded-lg text-sm font-bold">⬇ PDF로 저장</button>
+            <button onclick="document.getElementById('sum-dialog').close()" class="bg-white border text-gray-500 px-4 py-2 rounded-lg text-sm">닫기</button>
+        </div>
+    </div>
+    <div id="sum-body" class="p-10"></div>
+</dialog>
 
 <script>
 const ADMIN_PASSWORD = 'busan2026';
@@ -315,6 +361,191 @@ function applyFilter() {
             <td class="text-center">${score(sc.leader)}</td>
         </tr>`;
     }).join('');
+}
+
+// ===== 종합 분석 보고서 =====
+// 과업지시서 76행: "20개사 전체 결과를 종합한 DX 성숙도 현황 분석(영역별·등급별 분포 등)"
+const AREAS = [
+    {id:'work',     name:'작업지시'},
+    {id:'process',  name:'공정관리'},
+    {id:'quality',  name:'품질관리'},
+    {id:'material', name:'자재관리'},
+    {id:'basic',    name:'기초역량'},
+    {id:'leader',   name:'DX 리더십'}
+];
+const LV = {1:'LV1 기초', 2:'LV2 도입', 3:'LV3 정착', 4:'LV4 고도화', 5:'LV5 선도'};
+const LV_RAMP = {1:'#bfdbfe', 2:'#93c5fd', 3:'#60a5fa', 4:'#3b82f6', 5:'#1d4ed8'};
+
+// 진단 '건'이 아니라 '기업' 단위로 묶는다. 한 기업이 자가·전문가 두 건을 남기기 때문이다.
+// 대표값은 전문가 진단을 쓴다 — 현장에서 확인한 결과가 공식 진단이다.
+function groupByCompany(rows) {
+    const map = new Map();
+    rows.forEach(d => {
+        const key = (d.bizNum && String(d.bizNum).replace(/\D/g,'')) || d.company || '(무명)';
+        if (!map.has(key)) map.set(key, {key, company:d.company||'-', track:d.track||'-',
+                                        emp:d.emp||'-', self:null, expert:null});
+        const g = map.get(key);
+        if (d.type === 'expert') g.expert = d; else g.self = d;
+        if (d.company) g.company = d.company;
+    });
+    return [...map.values()].map(g => {
+        const main = g.expert || g.self;
+        return Object.assign(g, {
+            main, scores: (main && main.scores) || {},
+            total: main ? main.totalScore : null,
+            lv: main ? main.gradeLv : null,
+            track: (main && main.track) || g.track
+        });
+    });
+}
+
+function bar(name, val, max, color, label) {
+    const pct = max ? Math.min(100, val / max * 100) : 0;
+    return `<div class="bar-row">
+        <span class="bar-name">${esc(name)}</span>
+        <span class="bar-track"><i class="bar-fill" style="width:${pct}%;background:${color}"></i></span>
+        <b class="bar-val">${esc(label)}</b>
+    </div>`;
+}
+
+function openSummary() {
+    const co = groupByCompany(allData);
+    const n = co.length;
+    const box = document.getElementById('sum-body');
+    const today = new Date().toLocaleDateString('ko-KR');
+    const head = `
+        <div style="text-align:center;border-bottom:2px solid #1f2937;padding-bottom:20px;margin-bottom:26px;">
+            <p style="font-size:11px;color:#9ca3af;letter-spacing:.1em;margin-bottom:4px;">종합 분석 보고서</p>
+            <h1 style="font-size:26px;font-weight:900;color:#1e3a5f;margin-bottom:4px;">부산 패션(봉제) 소공인 DX 성숙도 현황 분석</h1>
+            <p style="font-size:13px;color:#9ca3af;">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</p>
+            <p style="font-size:12px;color:#6b7280;margin-top:8px;">작성일 ${today} · 진단 대상 <b>${n}개사</b></p>
+        </div>`;
+
+    if (!n) {
+        box.innerHTML = head + `<p style="color:#9ca3af;text-align:center;padding:40px 0;">
+            분석할 진단 결과가 없습니다. 진단이 등록되면 자동으로 집계됩니다.</p>`;
+        document.getElementById('sum-dialog').showModal();
+        return;
+    }
+
+    const scored = co.filter(c => c.total != null);
+    const avg = scored.length ? (scored.reduce((s,c)=>s+c.total,0) / scored.length) : 0;
+
+    // 등급별 분포
+    const gc = {1:0,2:0,3:0,4:0,5:0};
+    scored.forEach(c => gc[c.lv] = (gc[c.lv]||0) + 1);
+    const maxG = Math.max(1, ...Object.values(gc));
+
+    // 영역별 평균
+    const areaAvg = AREAS.map(a => {
+        const v = scored.map(c => c.scores[a.id]).filter(x => x != null);
+        return {name:a.name, id:a.id, avg: v.length ? v.reduce((s,x)=>s+x,0)/v.length : 0, n:v.length};
+    });
+    const weakest = [...areaAvg].sort((x,y)=>x.avg-y.avg)[0];
+    const strongest = [...areaAvg].sort((x,y)=>y.avg-x.avg)[0];
+
+    // Track별
+    const tc = {};
+    co.forEach(c => tc[c.track] = (tc[c.track]||0) + 1);
+
+    // 자가 vs 전문가 격차 (둘 다 있는 기업만)
+    const both = co.filter(c => c.self && c.expert);
+    const gapRows = AREAS.map(a => {
+        const g = both.map(c => (c.expert.scores[a.id]||0) - (c.self.scores[a.id]||0));
+        return {name:a.name, avg: g.length ? g.reduce((s,x)=>s+x,0)/g.length : 0};
+    });
+    const totGap = both.length
+        ? both.reduce((s,c)=>s+(c.expert.totalScore - c.self.totalScore),0) / both.length : 0;
+
+    // 우선 개선과제 — 취약 영역(2점 이하) 기업 수
+    const rfp = AREAS.map(a => ({
+        name: a.name,
+        n: scored.filter(c => (c.scores[a.id]||0) <= 2).length
+    })).sort((x,y)=>y.n-x.n);
+
+    box.innerHTML = head + `
+    <section>
+        <h3>1. 진단 개요</h3>
+        <table><tbody>
+            <tr><th style="width:24%;text-align:left">진단 대상</th><td>부산 소재 패션(봉제) 소공인 <b>${n}개사</b></td></tr>
+            <tr><th style="text-align:left">진단 방법</th><td>전문가 현장 방문진단 · 6개 영역 5점 척도(30점 만점)</td></tr>
+            <tr><th style="text-align:left">집계 기준</th><td>기업 단위 집계. 전문가 진단이 있으면 그 결과를, 없으면 자가진단 결과를 대표값으로 사용</td></tr>
+            <tr><th style="text-align:left">전체 평균</th><td><b>${avg.toFixed(1)}점</b> / 30점 · 평균 등급 ${LV[Math.round(avg)>=25?5:avg>=20?4:avg>=15?3:avg>=10?2:1]}</td></tr>
+        </tbody></table>
+    </section>
+
+    <section id="sum-grade">
+        <h3>2. 등급별 분포</h3>
+        ${[5,4,3,2,1].map(l => bar(LV[l], gc[l], maxG, LV_RAMP[l],
+            `${gc[l]}개사 ${scored.length?Math.round(gc[l]/scored.length*100):0}%`)).join('')}
+        <p style="font-size:11.5px;color:#6b7280;margin-top:10px;">
+            ${gc[1]+gc[2]}개사(${scored.length?Math.round((gc[1]+gc[2])/scored.length*100):0}%)가
+            LV2 이하로, 수기·구두 중심 운영에서 벗어나지 못한 상태다.</p>
+    </section>
+
+    <section id="sum-area">
+        <h3>3. 영역별 평균 점수</h3>
+        ${areaAvg.map(a => bar(a.name, a.avg, 5, LV_RAMP[Math.max(1,Math.round(a.avg))], a.avg.toFixed(1)+'점')).join('')}
+        <p style="font-size:11.5px;color:#6b7280;margin-top:10px;">
+            가장 취약한 영역은 <b>${esc(weakest.name)}</b>(${weakest.avg.toFixed(1)}점),
+            가장 양호한 영역은 <b>${esc(strongest.name)}</b>(${strongest.avg.toFixed(1)}점)이다.
+            영역 간 격차는 ${(strongest.avg-weakest.avg).toFixed(1)}점이다.</p>
+    </section>
+
+    <section id="sum-track">
+        <h3>4. 기업 유형(Track) 분포</h3>
+        <table><thead><tr><th style="text-align:left">유형</th><th class="text-center">기업 수</th><th class="text-center">비율</th></tr></thead>
+        <tbody>${Object.keys(tc).sort().map(t => `<tr>
+            <td>Track ${esc(t)}</td><td class="text-center">${tc[t]}개사</td>
+            <td class="text-center">${Math.round(tc[t]/n*100)}%</td></tr>`).join('')}</tbody></table>
+    </section>
+
+    ${both.length ? `
+    <section id="sum-gap">
+        <h3>5. 자가진단 대비 전문가 평가 격차</h3>
+        <p style="font-size:12.5px;color:#374151;margin-bottom:12px;">
+            자가진단과 전문가 진단이 모두 있는 <b>${both.length}개사</b> 기준.
+            전체 평균 격차는 <b>${totGap>0?'+':''}${totGap.toFixed(1)}점</b>이다.
+            음수는 기업이 자사 수준을 실제보다 높게 인식하고 있음을 뜻한다.</p>
+        <table><thead><tr><th style="text-align:left">영역</th><th class="text-center">평균 격차</th></tr></thead>
+        <tbody>${gapRows.map(g => `<tr><td>${esc(g.name)}</td>
+            <td class="text-center" style="font-weight:700;color:${g.avg<0?'#dc2626':g.avg>0?'#2563eb':'#9ca3af'}">
+            ${g.avg>0?'+':''}${g.avg.toFixed(1)}</td></tr>`).join('')}</tbody></table>
+    </section>` : `
+    <section id="sum-gap">
+        <h3>5. 자가진단 대비 전문가 평가 격차</h3>
+        <p style="font-size:12.5px;color:#9ca3af;">자가진단과 전문가 진단이 모두 있는 기업이 <b>0개사</b>여서 격차를 산출하지 않았다.</p>
+    </section>`}
+
+    <section id="sum-rfp">
+        <h3>6. 우선 개선과제 — 영역별 취약 기업 수</h3>
+        <p style="font-size:12.5px;color:#374151;margin-bottom:12px;">2점 이하를 취약으로 본다. 취약 기업이 많은 영역일수록 공동 지원사업의 효과가 크다.</p>
+        <table><thead><tr><th style="text-align:left">영역</th><th class="text-center">취약 기업</th><th style="text-align:left">연계 지원수단</th></tr></thead>
+        <tbody>${rfp.map(x => `<tr><td>${esc(x.name)}</td>
+            <td class="text-center"><b>${x.n}</b>개사</td>
+            <td>${esc({'작업지시':'디지털 작업지시서 도입','공정관리':'모바일 공정관리 시스템','품질관리':'품질 이력 추적 시스템','자재관리':'바코드 재고관리 도입','기초역량':'데이터 기초 컨설팅','DX 리더십':'CEO DX 역량 교육'}[x.name]||'-')}</td></tr>`).join('')}</tbody></table>
+    </section>
+
+    <section>
+        <h3>7. 기업별 진단 결과</h3>
+        <table><thead><tr>
+            <th style="text-align:left">기업명</th><th class="text-center">Track</th><th class="text-center">종업원</th>
+            <th class="text-center">총점</th><th class="text-center">등급</th><th class="text-center">진단 구분</th>
+        </tr></thead>
+        <tbody id="sum-company-rows">${co.sort((a,b)=>(b.total||0)-(a.total||0)).map(c => `<tr>
+            <td><b>${esc(c.company)}</b></td>
+            <td class="text-center">${esc(c.track)}</td>
+            <td class="text-center">${esc(c.emp)}</td>
+            <td class="text-center"><b>${c.total!=null?c.total:'-'}</b></td>
+            <td class="text-center">${esc(c.lv?LV[c.lv]:'-')}</td>
+            <td class="text-center">${c.expert?'전문가':'자가진단'}</td>
+        </tr>`).join('')}</tbody></table>
+    </section>
+
+    <p style="font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px;">
+        ※ 본 보고서는 진단 시스템에 등록된 결과를 자동 집계한 것이다. 작성 시점 ${today}.</p>`;
+
+    document.getElementById('sum-dialog').showModal();
 }
 
 function exportCSV() {
