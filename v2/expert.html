@@ -122,6 +122,7 @@
             <p class="text-gray-400 text-sm mt-1">2026 부산 패션(봉제) 소공인 디지털 전환(DX) 역량진단 · 재단법인 부산테크노파크</p>
         </div>
         <table class="w-full mb-6 border-t-2 border-gray-800 text-sm"><tbody id="rpt-info"></tbody></table>
+        <div id="rpt-overview-wrap"></div>
         <div class="flex justify-between mb-6" style="height:290px">
             <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">역량 균형도</h3><canvas id="rpt-radar"></canvas></div>
             <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">영역별 점수</h3><canvas id="rpt-bar"></canvas></div>
@@ -133,7 +134,7 @@
             <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-green-500 pl-3 mb-3">전문가 종합의견</h3>
             <p id="rpt-comment" class="text-sm text-gray-700 leading-relaxed bg-gray-50 p-5 rounded border"></p>
         </div>
-        <div id="rpt-causes-wrap"></div>
+        <div id="rpt-detail-wrap" class="page-break"></div>
         <div class="page-break">
             <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-green-500 pl-3 mb-4">이행 로드맵</h3>
             <div class="grid grid-cols-3 gap-4 mb-6" id="rpt-roadmap"></div>
@@ -211,6 +212,7 @@ async function saveDiagnosis() {
             totalScore: Object.values(state.grade.scores).reduce((a,b)=>a+b,0),
             scores: state.grade.scores,
             causes: state.causes,
+            comments: state.comments,
             solutions: state.solutions,
             roadmap: { short: state.roadmap.short, mid: state.roadmap.mid, long: state.roadmap.long },
             opinion: state.opinion
@@ -320,7 +322,7 @@ const STEPS = [
 
 let state = {
     step:'lookup', track:null,
-    info:{}, scores:{}, causes:{}, solutions:{},
+    info:{}, scores:{}, causes:{}, solutions:{}, comments:{},
     roadmap:{ short:[], mid:[], long:[], _built:false },
     opinion:'', grade:null, saved:false,
     selfRef:null, selfData:null, selfScores:null,
@@ -677,6 +679,13 @@ function renderExpertDiag(el) {
             </div>
         </div>
 
+        <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">전문가 코멘트 <span class="font-normal normal-case tracking-normal">(선택 · 리포트에 그대로 실립니다)</span></p>
+            <textarea id="cmt-${area.id}" rows="3" oninput="setComment('${area.id}', this.value)"
+                class="w-full border border-gray-200 rounded-lg p-3 text-sm resize-none"
+                placeholder="현장에서 관찰한 내용을 적어주세요.&#10;예) 작업지시서를 대표자가 직접 구두로 전달하고 있어 재작업이 잦다고 함.">${(state.comments[area.id]||'').replace(/</g,'&lt;')}</textarea>
+        </div>
+
     </div>
     <div class="px-6 py-3 border-t flex justify-between">
         <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
@@ -846,6 +855,12 @@ function setScore(id, val) {
     saveDraft();
 }
 
+// 화면을 다시 그리지 않는다. 다시 그리면 입력 중 포커스를 잃는다.
+function setComment(areaId, v) {
+    state.comments[areaId] = v;
+    saveDraft();
+}
+
 function toggleCause(areaId, cause) {
     if(!state.causes[areaId])state.causes[areaId]=[];
     const idx=state.causes[areaId].indexOf(cause);
@@ -881,7 +896,7 @@ function saveOpinion() {
 }
 
 function restart() {
-    state = { step:'lookup', track:null, info:{}, scores:{}, causes:{}, solutions:{},
+    state = { step:'lookup', track:null, info:{}, scores:{}, causes:{}, solutions:{}, comments:{},
               roadmap:{short:[],mid:[],long:[],_built:false}, opinion:'', grade:null, saved:false,
               selfRef:null, selfData:null, selfScores:null, photos:{} };
     selfCache = null;  // 다음 기업 진단 시 최신 자가진단 목록을 다시 조회
@@ -985,6 +1000,7 @@ function exportExpertResult() {
         track: state.track,
         scores: state.scores,
         causes: state.causes,
+        comments: state.comments,
         solutions: state.solutions,
         roadmap: { short: state.roadmap.short, mid: state.roadmap.mid, long: state.roadmap.long },
         opinion: state.opinion,
@@ -1020,18 +1036,36 @@ function printExpertReport() {
                     <span class="font-bold">${s.name}</span> <span class="text-gray-500">· ${s.budget}</span></div>`;
             }).join('')||'<p class="text-xs text-gray-300">항목 없음</p>'}
         </div>`).join('');
-    const weak=DATA.areas.map(a=>({id:a.id,name:a.name,s:g.scores[a.id]||0})).sort((a,b)=>a.s-b.s).slice(0,3);
-    document.getElementById('rpt-rfp').innerHTML=weak.map(w=>`
-        <div class="border rounded-lg p-4 bg-gray-50 flex items-center gap-3">
-            <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold whitespace-nowrap">${w.name} ${w.s}점</span>
-            <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
-        </div>`).join('');
+    // 취약 3개 영역에 대해 무엇을·왜·얼마에 도입해야 하는지까지 적는다 (phL은 위 로드맵에서 선언)
+    const weak=DATA.areas.map(a=>({id:a.id,name:a.name,icon:a.icon,s:g.scores[a.id]||0})).sort((a,b)=>a.s-b.s).slice(0,3);
+    document.getElementById('rpt-rfp').innerHTML=weak.map((w,i)=>{
+        const sel=(state.solutions[w.id]||[]).map(id=>DATA.solutions[w.id].find(s=>s.id===id)).filter(Boolean);
+        const sols=sel.length?sel:[DATA.solutions[w.id][0]].filter(Boolean);
+        const cz=(state.causes[w.id]||[]).join(' · ');
+        return `
+        <div class="border rounded-lg p-4" style="break-inside:avoid">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="bg-gray-800 text-white text-xs px-2 py-0.5 rounded font-bold">과제 ${i+1}</span>
+                <span class="font-bold text-gray-800">${w.icon} ${w.name}</span>
+                <span class="text-xs text-gray-400">현재 ${w.s}점 / 5점</span>
+            </div>
+            ${cz?`<p class="text-xs text-gray-500 mb-2">도입 사유 — ${cz}</p>`:''}
+            ${sols.map(s=>`
+                <div class="border-l-2 border-red-300 pl-3 mb-2">
+                    <div class="text-sm"><b>${s.name}</b>
+                        <span class="text-xs text-gray-500 ml-1">${phL[s.phase]}</span>
+                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">💰 ${s.budget}</span></div>
+                    <div class="text-xs text-gray-500 mt-0.5">${s.desc}</div>
+                </div>`).join('')}
+        </div>`;
+    }).join('');
 
+    document.getElementById('rpt-overview-wrap').innerHTML = overviewSection();
     document.getElementById('rpt-gauge-wrap').innerHTML    = gaugeSection(g);
     document.getElementById('rpt-strength-wrap').innerHTML = strengthSection(g);
     document.getElementById('rpt-compare-wrap').innerHTML  = compareSection(g);
-    document.getElementById('rpt-causes-wrap').innerHTML  = causesSection();
-    document.getElementById('rpt-photos-wrap').innerHTML  = photosSection();
+    document.getElementById('rpt-detail-wrap').innerHTML   = detailSection(g);
+    document.getElementById('rpt-photos-wrap').innerHTML   = photosSection();
 
     // 다이얼로그를 먼저 열어야 캔버스에 크기가 생긴다.
     // 숨긴 채로 그리면 0x0이 되어 차트가 깨진다.
@@ -1122,20 +1156,61 @@ function compareSection(g) {
     </div>`;
 }
 
-function causesSection() {
-    const rows = DATA.areas.map(a => {
-        const c = state.causes[a.id];
-        if (!c || !c.length) return '';
-        return `<div class="border rounded-lg p-3 mb-2 bg-orange-50 border-orange-100">
-            <span class="text-sm font-bold text-gray-800">${a.icon} ${a.name}</span>
-            <span class="text-sm text-orange-800 ml-2">${c.join(' · ')}</span>
+// 진단 방법·영역·척도를 앞에 밝힌다. 보고서를 처음 받는 사람이 점수를 해석할 수 있어야 한다.
+function overviewSection() {
+    const scale = DATA.expertOpts.map(o => `${o.val}점 ${o.text}`).join(' · ');
+    return `
+    <div id="rpt-overview" class="mb-6">
+        <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-gray-400 pl-3 mb-3">진단 개요</h3>
+        <div class="border rounded-lg p-4 text-sm text-gray-700 leading-relaxed">
+            <p class="mb-2">전문가가 현장을 방문하여 대표자·실무자 면담과 작업 현장 관찰을 통해
+            아래 6개 영역을 각각 5점 척도로 평가하였습니다.</p>
+            <p class="mb-2"><b>진단 영역</b> — ${DATA.areas.map(a=>`${a.icon} ${a.name}`).join(' · ')}</p>
+            <p class="mb-2"><b>평가 척도</b> — ${scale}</p>
+            <p class="text-xs text-gray-500">※ DX 리더십은 대표자의 추진 의지를 기준으로
+            ${DATA.leaderOpts.map(o=>`${o.val}점 ${o.text}`).join(' · ')} 척도를 적용합니다.</p>
+        </div>
+    </div>`;
+}
+
+// 영역별 상세 진단 — 점수·척도 문구·근본원인·전문가 코멘트·권고 솔루션을 한 묶음으로 보인다.
+// 흩어져 있으면 "이 공장의 작업지시가 어떤 상태인지"를 읽어낼 수 없다.
+function detailSection(g) {
+    const phL = {short:'단기', mid:'중기', long:'장기'};
+    const blocks = DATA.areas.map(a => {
+        const sc   = g.scores[a.id];
+        const opts = a.id === 'leader' ? DATA.leaderOpts : DATA.expertOpts;
+        const lvl  = (opts.find(o => o.val === sc) || {}).text || '-';
+        const cz   = state.causes[a.id]   || [];
+        const cmt  = (state.comments[a.id] || '').trim();
+        const sols = (state.solutions[a.id] || [])
+            .map(id => DATA.solutions[a.id].find(s => s.id === id)).filter(Boolean);
+        return `
+        <div class="border rounded-lg mb-4" style="break-inside:avoid">
+            <div class="flex items-center justify-between px-4 py-2 bg-gray-50 border-b">
+                <span class="font-bold text-gray-800">${a.icon} ${a.name}</span>
+                <span class="text-sm"><b class="text-[#14532d]">${sc != null ? sc : '-'}점</b><span class="text-gray-400"> / 5점</span></span>
+            </div>
+            <div class="px-4 py-3 text-sm space-y-2">
+                <div><span class="text-gray-400 text-xs mr-2">진단 문항</span>${DATA.questions[a.id][state.track] || '-'}</div>
+                <div><span class="text-gray-400 text-xs mr-2">현재 수준</span><b>${lvl}</b></div>
+                ${cz.length ? `<div><span class="text-gray-400 text-xs mr-2">근본 원인</span><span class="text-orange-800">${cz.join(' · ')}</span></div>` : ''}
+                ${cmt ? `<div class="bg-green-50 border border-green-100 rounded p-2 leading-relaxed">
+                    <span class="text-green-700 text-xs font-bold mr-2">전문가 코멘트</span>${cmt.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>` : ''}
+                ${sols.length ? `<div>
+                    <span class="text-gray-400 text-xs">권고 솔루션</span>
+                    ${sols.map(s=>`<div class="mt-1 pl-3 border-l-2 border-green-300">
+                        <b>${s.name}</b> <span class="text-xs text-gray-500">[${phL[s.phase]}]</span>
+                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-1">💰 ${s.budget}</span>
+                        <div class="text-xs text-gray-500 mt-0.5">${s.desc}</div>
+                    </div>`).join('')}</div>` : ''}
+            </div>
         </div>`;
     }).join('');
-    if (!rows) return '';
     return `
-    <div id="rpt-causes" class="mb-6">
-        <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-orange-500 pl-3 mb-3">근본 원인 분석</h3>
-        ${rows}
+    <div id="rpt-detail" class="mb-6">
+        <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-orange-500 pl-3 mb-4">영역별 상세 진단</h3>
+        ${blocks}
     </div>`;
 }
 
