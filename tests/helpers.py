@@ -9,12 +9,17 @@ payload만 window.__writes에 모은다. 조회도 가짜 문서를 반환한다
 
 BASE = "http://localhost:8899"
 
+# where(필드, 연산, 값) 조건을 실제로 적용한다.
+# 무조건 전부 반환하면 자가진단 목록에 전문가 진단이 섞여 검증이 무의미해진다.
 PATCH = """(fakes) => {
     const inst = firebase.firestore();
     window.__writes = [];
     inst.collection = (name) => ({
         add: async (data) => { window.__writes.push({collection:name, data}); return {id:'faked'}; },
-        where: () => ({ get: async () => ({ docs: fakes.map(f => ({ id: f.id, data: () => f })) }) }),
+        where: (field, op, val) => ({
+            get: async () => ({ docs: fakes.filter(f => f[field] === val)
+                                          .map(f => ({ id: f.id, data: () => f })) })
+        }),
         orderBy: () => ({ get: async () => ({ docs: [] }) })
     });
 }"""

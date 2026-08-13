@@ -38,11 +38,9 @@ BLOCK_WRITE = """() => {
     // savePDF()는 인쇄 직후 캔버스를 원복하므로, 나중에 보면 이미 사라져 있다.
     window.print = () => {
         window.__printed++;
-        window.__imgsAtPrint = ['rpt-radar','rpt-bar'].map(id => {
-            const c = document.getElementById(id);
-            return { imgs: c.parentNode.querySelectorAll('img').length,
-                     canvasHidden: c.style.display === 'none' };
-        });
+        const c = document.getElementById('rpt-radar');
+        window.__imgsAtPrint = { imgs: c.parentNode.querySelectorAll('img').length,
+                                 canvasHidden: c.style.display === 'none' };
     };
 }"""
 
@@ -104,15 +102,28 @@ with sync_playwright() as pw:
 
     r.check("리포트 다이얼로그 열림", page.evaluate("document.getElementById('report-dialog').open") is True)
 
-    cv = page.evaluate("""() => ['rpt-radar','rpt-bar'].map(id => {
-        const c = document.getElementById(id);
-        if (!c || !c.width) return {id, w:0, nonblank:0};
+    # 레이더만 캔버스다. 막대는 HTML로 그린다.
+    cv = page.evaluate("""() => {
+        const c = document.getElementById('rpt-radar');
+        if (!c || !c.width) return {w:0, nonblank:0};
         const d = c.getContext('2d').getImageData(0,0,c.width,c.height).data;
         let nb = 0; for (let i=3;i<d.length;i+=4) if (d[i] !== 0) nb++;
-        return {id, w:c.width, h:c.height, nonblank:nb};
-    })""")
-    for c in cv:
-        r.check(f"{c['id']} 정상 렌더링", c["w"] > 0 and c["nonblank"] > 100, str(c))
+        return {w:c.width, h:c.height, nonblank:nb};
+    }""")
+    r.check("레이더 정상 렌더링", cv["w"] > 0 and cv["nonblank"] > 100, str(cv))
+
+    bars = page.evaluate("""() => {
+        const rows = [...document.querySelectorAll('#rpt-bar .bar-row')];
+        return { rows: rows.length,
+                 labeled: rows.every(x => x.querySelector('.bar-val').innerText.trim().endsWith('점')),
+                 filled: rows.every(x => (x.querySelector('.bar-fill').style.width || '') !== '') };
+    }""")
+    r.check("막대 정상 렌더링", bars["rows"] == 6 and bars["labeled"] and bars["filled"], str(bars))
+    r.check("영역별 상세 미니 막대",
+            page.evaluate("document.querySelectorAll('#rpt-detail .bar-track').length") == 6,
+            str(page.evaluate("document.querySelectorAll('#rpt-detail .bar-track').length")))
+    r.check("진단자 표기", "검증진단자" in page.inner_text("#rpt-info"),
+            page.inner_text("#rpt-info").replace("\n", " | ")[:160])
 
     body = page.inner_text("#report-dialog")
     r.check("자가진단 비교표", page.locator("#rpt-compare").count() == 1)
@@ -126,15 +137,15 @@ with sync_playwright() as pw:
     r.check("인쇄 호출됨", page.evaluate("window.__printed") == 1,
             str(page.evaluate("window.__printed")))
     at_print = page.evaluate("window.__imgsAtPrint")
-    r.check("인쇄 시점에 차트가 이미지로 변환됨",
-            bool(at_print) and all(c["imgs"] == 1 and c["canvasHidden"] for c in at_print),
+    r.check("인쇄 시점에 레이더가 이미지로 변환됨",
+            bool(at_print) and at_print["imgs"] == 1 and at_print["canvasHidden"],
             str(at_print))
 
-    restored = page.evaluate("""() => ['rpt-radar','rpt-bar'].map(id => {
-        const c = document.getElementById(id);
+    restored = page.evaluate("""() => {
+        const c = document.getElementById('rpt-radar');
         return { imgs: c.parentNode.querySelectorAll('img').length, display: c.style.display };
-    })""")
-    r.check("인쇄 후 캔버스 원복", all(c["imgs"] == 0 and c["display"] != 'none' for c in restored),
+    }""")
+    r.check("인쇄 후 캔버스 원복", restored["imgs"] == 0 and restored["display"] != 'none',
             str(restored))
 
     r.check("프로덕션에 문서 미생성", page.evaluate("window.__writes.length") == 1,

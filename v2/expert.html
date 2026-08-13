@@ -226,6 +226,15 @@ async function fetchSelfList() {
     return selfCache;
 }
 
+// 완료된 전문가 진단 조회 — 리포트를 다시 뽑기 위한 것
+let doneCache = null;
+async function fetchDoneList() {
+    if (doneCache) return doneCache;
+    const snap = await db.collection('diagnoses').where('type','==','expert').get();
+    doneCache = snap.docs.map(x => ({ id:x.id, ...x.data() }));
+    return doneCache;
+}
+
 async function saveDiagnosis() {
     if (state.saved) return;
     state.saved = true;
@@ -357,7 +366,7 @@ const STEPS = [
 ];
 
 let state = {
-    step:'lookup', track:null, expertName:'',
+    step:'lookup', track:null, expertName:'', reopened:false,
     info:{}, scores:{}, causes:{}, solutions:{}, comments:{},
     roadmap:{ short:[], mid:[], long:[], _built:false },
     opinion:'', grade:null, saved:false,
@@ -479,11 +488,88 @@ function renderLookup(el) {
             </div>
             <div id="lk-list" style="max-height:340px;overflow-y:auto"></div>
         </div>
+
+        <div class="border-t pt-4">
+            <div class="flex items-center mb-1">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">완료한 전문가 진단 <span id="lk-done-count" class="text-gray-300"></span></p>
+                <button onclick="doneCache=null;loadDoneList()" class="ml-auto text-xs text-gray-400 underline">새로고침</button>
+            </div>
+            <p class="text-xs text-gray-400 mb-2">리포트를 다시 뽑을 수 있습니다. 현장 사진은 복원되지 않습니다.</p>
+            <div id="lk-done" style="max-height:300px;overflow-y:auto"></div>
+        </div>
     </div>
     <div class="px-8 pb-6 flex justify-end">
         <button onclick="skipLookup()" class="text-sm text-gray-400 underline">자가진단 없이 시작 →</button>
     </div>`;
     loadRecentList();
+    loadDoneList();
+}
+
+async function loadDoneList() {
+    const box = document.getElementById('lk-done');
+    if (!box) return;
+    box.innerHTML = '<p class="text-xs text-gray-400 py-3">불러오는 중...</p>';
+    try {
+        const list = (await fetchDoneList()).slice().sort((a,b) => {
+            // 본인이 진단한 것을 먼저 보여준다. 이름이 조금 달라도 목록에서 사라지지 않게
+            // 타 진단자 것도 함께 표시한다.
+            const am = (a.expertName||'') === state.expertName ? 0 : 1;
+            const bm = (b.expertName||'') === state.expertName ? 0 : 1;
+            return am !== bm ? am - bm : tsMillis(b.timestamp) - tsMillis(a.timestamp);
+        });
+        document.getElementById('lk-done-count').innerText = `${list.length}건`;
+        box.innerHTML = list.length
+            ? list.map(d => doneCard(d)).join('')
+            : '<p class="text-xs text-gray-400 py-3">완료된 진단이 없습니다.</p>';
+    } catch(e) {
+        box.innerHTML = `<p class="text-xs text-red-500 py-3">목록 불러오기 실패: ${e.message}</p>`;
+    }
+}
+
+function doneCard(d) {
+    const mine = (d.expertName||'') === state.expertName;
+    return `
+        <div class="done-card border rounded-lg p-4 mb-2 ${mine?'border-green-300 bg-green-50':'border-gray-200'}"
+             data-company="${(d.company||'').replace(/"/g,'')}">
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <div class="font-bold text-gray-800">${d.company||'-'}${mine?' <span class="text-xs text-green-700">(내 진단)</span>':''}</div>
+                    <div class="text-xs text-gray-500 mt-0.5">${d.emp||'-'} · Track ${d.track||'-'} · ${d.gradeTxt||'-'}${d.totalScore!=null?` (${d.totalScore}점)`:''}</div>
+                    <div class="text-xs text-gray-400 mt-0.5">진단자 ${d.expertName||'-'} · ${tsText(d.timestamp)}</div>
+                </div>
+                <button onclick="reopenDone('${d.id}')" class="border-2 border-green-600 text-green-700 hover:bg-green-50 px-4 py-2 rounded-lg font-bold text-xs whitespace-nowrap flex-shrink-0">리포트 열기</button>
+            </div>
+        </div>`;
+}
+
+// 저장된 전문가 진단을 결과 화면으로 되살린다.
+// saved=true로 두어 다시 저장되지 않게 한다 — 열 때마다 기록이 늘면 집계가 어긋난다.
+function reopenDone(id) {
+    const d = (doneCache||[]).find(x => x.id === id);
+    if (!d) return;
+    state.info       = { comp:d.company||'', ceo:'', emp:d.emp||'',
+                         biz:d.bizNum?fmtBizNum(d.bizNum):'', phone:'', email:'' };
+    state.track      = d.track || null;
+    state.scores     = d.scores || {};
+    state.causes     = d.causes || {};
+    state.comments   = d.comments || {};
+    state.solutions  = d.solutions || {};
+    state.roadmap    = Object.assign({short:[],mid:[],long:[],_built:true}, d.roadmap || {});
+    state.opinion    = d.opinion || '';
+    state.selfRef    = d.selfRef || null;
+    state.selfScores = d.selfScores || null;
+    state.photos     = {};              // 사진은 저장하지 않으므로 복원 대상이 아니다
+    state.expertName = d.expertName || state.expertName;
+    state.saved      = true;            // 재저장 방지
+    state.reopened   = true;
+    document.getElementById('hd-company').innerText = state.info.comp;
+    document.getElementById('hd-company').classList.remove('hidden');
+    if (state.track) {
+        document.getElementById('hd-track').innerText = `Track ${state.track}`;
+        document.getElementById('hd-track').classList.remove('hidden');
+    }
+    state.step = 'result';
+    render();
 }
 
 async function loadRecentList() {
@@ -806,6 +892,11 @@ function renderResult(el) {
 
     el.innerHTML = `
     <div class="p-6">
+        ${state.reopened ? `
+        <div class="border-2 border-amber-300 bg-amber-50 rounded-lg p-3 mb-4 text-sm text-amber-900">
+            📄 <b>저장된 진단을 다시 연 화면입니다.</b>
+            <span class="text-xs">리포트를 다시 발행할 수 있습니다. 현장 사진은 복원되지 않으며, 다시 저장되지 않습니다.</span>
+        </div>` : ''}
         <div class="text-center mb-5">
             <h2 class="text-2xl font-bold text-gray-800">전문가 진단 완료</h2>
             <div class="flex items-center justify-center gap-2 mt-1">
@@ -933,11 +1024,12 @@ function saveOpinion() {
 
 function restart() {
     const who = state.expertName;   // 같은 진단자가 이어서 다음 기업을 진단한다
-    state = { step:'lookup', track:null, expertName:who,
+    state = { step:'lookup', track:null, expertName:who, reopened:false,
               info:{}, scores:{}, causes:{}, solutions:{}, comments:{},
               roadmap:{short:[],mid:[],long:[],_built:false}, opinion:'', grade:null, saved:false,
               selfRef:null, selfData:null, selfScores:null, photos:{} };
-    selfCache = null;  // 다음 기업 진단 시 최신 자가진단 목록을 다시 조회
+    selfCache = null;  // 다음 기업 진단 시 최신 목록을 다시 조회
+    doneCache = null;
     clearDraft();
     document.getElementById('hd-company').classList.add('hidden');
     document.getElementById('hd-track').classList.add('hidden');
@@ -1250,6 +1342,16 @@ function detailSection(g) {
 
 function photosSection() {
     const labels = {1:'현장 전경', 2:'주요 애로사항'};
+    if (state.reopened && !state.photos[1] && !state.photos[2]) {
+        // 다시 발행한 보고서임을 지면에 남긴다. 사진이 왜 없는지 읽는 사람이 알아야 한다.
+        return `
+    <div id="rpt-photos" class="mb-6" style="break-inside:avoid">
+        <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-gray-400 pl-3 mb-3">현장 사진</h3>
+        <p class="text-sm text-gray-500 border rounded-lg p-4">
+            ※ 이 보고서는 저장된 진단 결과를 다시 발행한 것으로, 현장 사진은 포함되지 않습니다.
+        </p>
+    </div>`;
+    }
     const imgs = [1,2].filter(n => state.photos[n]).map(n => `
         <div class="w-[49%]">
             <p class="text-xs font-bold text-gray-500 mb-1">${labels[n]}</p>
