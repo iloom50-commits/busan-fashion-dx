@@ -172,12 +172,11 @@ async function saveDiagnosis() {
         await db.collection('diagnoses').add({
             type: 'expert',
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            // 대표자·연락처·이메일은 저장하지 않는다 (개인정보 최소화)
+            // 근거: docs/superpowers/specs/2026-08-13-privacy-minimization-design.md
             company: state.info.comp,
-            ceo: state.info.ceo || '',
             emp: state.info.emp || '',
             bizNum: normBizNum(state.info.biz),
-            phone: state.info.phone || '',
-            email: state.info.email || '',
             selfRef: state.selfRef || null,
             selfScores: state.selfScores || null,
             track: state.track,

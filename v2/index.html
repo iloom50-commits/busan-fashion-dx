@@ -168,14 +168,13 @@ async function saveDiagnosis() {
     state.saved = true;
     const statusEl = document.getElementById('save-status');
     try {
+        // 대표자·연락처·이메일은 저장하지 않는다 (개인정보 최소화)
+        // 근거: docs/superpowers/specs/2026-08-13-privacy-minimization-design.md
         await db.collection('diagnoses').add({
             type: 'self',
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             company: state.info.comp,
-            ceo: state.info.ceo || '',
             bizNum: normBizNum(state.info.biznum),
-            phone: state.info.phone || '',
-            email: state.info.email || '',
             emp: state.info.emp || '',
             bizType: state.info.biz_type || '',
             track: state.track,
@@ -331,6 +330,10 @@ function renderSelfInfo(el) {
         </div>
         <div><label class="block text-xs font-bold text-gray-500 mb-1">이메일</label>
             <input id="si-email" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="example@busan.kr" value="${i.email||''}"></div>
+        <p class="text-xs text-gray-400 flex items-start gap-1.5 -mt-2">
+            <span>🔒</span>
+            <span>대표자명·연락처·이메일은 결과보고서 출력에만 사용되며 서버에 저장되지 않습니다.</span>
+        </p>
         <div>
             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">종업원 수 <span class="text-red-500">*</span></p>
             <div class="grid grid-cols-4 gap-2">

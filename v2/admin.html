@@ -131,7 +131,6 @@
                         <tr>
                             <th class="text-left">진단일시</th>
                             <th class="text-left">기업명</th>
-                            <th class="text-left">대표자</th>
                             <th class="text-left">종업원</th>
                             <th class="text-center">유형</th>
                             <th class="text-center">Track</th>
@@ -295,7 +294,6 @@ function applyFilter() {
         return `<tr>
             <td class="text-gray-400 text-xs">${dateStr}</td>
             <td class="font-bold text-gray-800">${d.company||'-'}</td>
-            <td>${d.ceo||'-'}</td>
             <td class="text-gray-500">${d.emp||'-'}</td>
             <td class="text-center"><span class="badge ${typeColor[d.type]||''}">${typeLabel[d.type]||d.type}</span></td>
             <td class="text-center font-bold text-gray-600">Track ${d.track||'-'}</td>
@@ -322,12 +320,12 @@ function exportCSV() {
         return true;
     });
 
-    const header = ['진단일시','기업명','대표자','종업원','유형','Track','등급','총점','작업지시','공정관리','품질관리','자재관리','기초역량','DX리더십'];
+    const header = ['진단일시','기업명','사업자번호','종업원','유형','Track','등급','총점','작업지시','공정관리','품질관리','자재관리','기초역량','DX리더십'];
     const rows = data.map(d => {
         const ts = d.timestamp?.toDate ? d.timestamp.toDate() : (d.timestamp ? new Date(d.timestamp) : null);
         const dateStr = ts ? ts.toLocaleString('ko-KR') : '';
         const sc = d.scores || {};
-        return [dateStr, d.company||'', d.ceo||'', d.emp||'', d.type==='self'?'자가진단':'전문가진단',
+        return [dateStr, d.company||'', d.bizNum||'', d.emp||'', d.type==='self'?'자가진단':'전문가진단',
                 d.track||'', d.gradeTxt||'', d.totalScore||'',
                 sc.work||'', sc.process||'', sc.quality||'', sc.material||'', sc.basic||'', sc.leader||''];
     });
