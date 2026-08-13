@@ -47,10 +47,23 @@
 
         input:focus, textarea:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.1); }
 
+        dialog#report-dialog {
+            border: none; padding: 0; border-radius: 16px;
+            width: min(800px, 95vw); max-height: 96vh; height: 96vh;
+            overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+        }
+        dialog#report-dialog::backdrop { background: rgba(0,0,0,0.6); }
+
         @media print {
-            body { background: white; display: block; }
-            header, #progress-bar-container, #main-card, .no-print { display: none !important; }
-            #print-area { display: block !important; }
+            body > *:not(dialog) { display: none !important; }
+            dialog#report-dialog {
+                display: block !important; position: static !important;
+                width: 100% !important; max-height: none !important; height: auto !important;
+                box-shadow: none !important; border-radius: 0 !important;
+                overflow: visible !important;
+            }
+            dialog#report-dialog::backdrop { display: none !important; }
+            .no-print { display: none !important; }
             .page-break { page-break-before: always; }
         }
     </style>
@@ -91,7 +104,18 @@
         <div id="wiz" class="fade-in w-full"></div>
     </div>
 
-    <div id="print-area" class="hidden w-full max-w-4xl mx-auto p-10">
+</main>
+
+<!-- 결과보고서 다이얼로그 -->
+<dialog id="report-dialog">
+    <div class="no-print flex items-center justify-between px-6 py-4 border-b bg-gray-50 sticky top-0 z-10" style="border-radius:16px 16px 0 0;">
+        <span style="font-weight:700;color:#374151;">📄 전문가 진단 결과보고서 미리보기</span>
+        <div style="display:flex;gap:8px;">
+            <button onclick="savePDF()" style="background:#16a34a;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">⬇ PDF로 저장</button>
+            <button onclick="document.getElementById('report-dialog').close()" style="background:white;border:1px solid #e5e7eb;color:#6b7280;padding:8px 16px;border-radius:8px;font-size:14px;cursor:pointer;">닫기</button>
+        </div>
+    </div>
+    <div class="p-10">
         <div class="text-center border-b-2 border-gray-800 pb-5 mb-6">
             <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">전문가 현장 진단</p>
             <h1 class="text-3xl font-bold text-[#14532d]">DX 역량 진단 결과보고서</h1>
@@ -102,6 +126,7 @@
             <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">역량 균형도</h3><canvas id="rpt-radar"></canvas></div>
             <div class="w-[49%] border p-3"><h3 class="font-bold text-center text-xs mb-1">영역별 점수</h3><canvas id="rpt-bar"></canvas></div>
         </div>
+        <div id="rpt-compare-wrap"></div>
         <div class="bg-gray-50 p-5 rounded border mb-6">
             <div class="flex items-center gap-2 mb-2">
                 <span class="bg-green-900 text-white px-2 py-0.5 text-xs font-bold rounded">종합 등급</span>
@@ -109,7 +134,8 @@
             </div>
             <p id="rpt-comment" class="text-sm text-gray-700 leading-relaxed border-t pt-3 mt-2"></p>
         </div>
-        <div id="rpt-roadmap-section" class="page-break">
+        <div id="rpt-causes-wrap"></div>
+        <div class="page-break">
             <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-green-500 pl-3 mb-4">이행 로드맵</h3>
             <div class="grid grid-cols-3 gap-4 mb-6" id="rpt-roadmap"></div>
         </div>
@@ -117,8 +143,9 @@
             <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-red-500 pl-3 mb-4">맞춤형 기술 수요 (RFP)</h3>
             <div id="rpt-rfp" class="space-y-3"></div>
         </div>
+        <div id="rpt-photos-wrap"></div>
     </div>
-</main>
+</dialog>
 
 <script>
 const ACCESS_CODE = '2026';
@@ -297,7 +324,8 @@ let state = {
     info:{}, scores:{}, causes:{}, solutions:{},
     roadmap:{ short:[], mid:[], long:[], _built:false },
     opinion:'', grade:null, saved:false,
-    selfRef:null, selfData:null, selfScores:null
+    selfRef:null, selfData:null, selfScores:null,
+    photos:{}   // {1: dataURL, 2: dataURL} — 단계를 넘겨도 유지되도록 state에 보관
 };
 let charts = {};
 
@@ -309,7 +337,10 @@ const DRAFT_KEY = 'dx-expert-draft';
 
 function saveDraft() {
     if (state.step === 'lookup' || state.saved) return;
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(state)); } catch(e) {}
+    // 사진(base64)은 용량이 커서 localStorage 한도를 넘길 수 있으므로 제외한다.
+    // 이어서 작성할 때 사진은 다시 첨부한다.
+    const { photos, ...rest } = state;
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(rest)); } catch(e) {}
 }
 function loadDraft() {
     try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch(e) { return null; }
@@ -322,6 +353,7 @@ function resumeDraft() {
     const d = loadDraft();
     if (!d) return;
     state = d;
+    state.photos = state.photos || {};   // 임시저장에서 제외된 필드
     if (state.info && state.info.comp) {
         document.getElementById('hd-company').innerText = state.info.comp;
         document.getElementById('hd-company').classList.remove('hidden');
@@ -568,6 +600,7 @@ function renderPhoto(el) {
         <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
         <button onclick="next()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm">다음 →</button>
     </div>`;
+    [1,2].forEach(showPhoto);   // 이 단계로 돌아왔을 때 기존 사진을 다시 보여준다
 }
 
 function renderExpertDiag(el) {
@@ -783,11 +816,27 @@ function loadPhoto(inp, n) {
     if(!inp.files[0])return;
     const r=new FileReader();
     r.onload=e=>{
-        document.getElementById(`ph-img-${n}`).src=e.target.result;
-        document.getElementById(`ph-img-${n}`).classList.remove('hidden');
-        document.getElementById(`ph-lbl-${n}`).classList.add('hidden');
+        // 스마트폰 사진은 수 MB라 그대로 두면 리포트 인쇄가 느려진다. 긴 변 1200px로 축소.
+        const img=new Image();
+        img.onload=()=>{
+            const max=1200, sc=Math.min(1, max/Math.max(img.width,img.height));
+            const cv=document.createElement('canvas');
+            cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
+            cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+            state.photos[n]=cv.toDataURL('image/jpeg',0.8);
+            showPhoto(n);
+        };
+        img.src=e.target.result;
     };
     r.readAsDataURL(inp.files[0]);
+}
+
+function showPhoto(n) {
+    const el=document.getElementById(`ph-img-${n}`);
+    if(!el||!state.photos[n])return;
+    el.src=state.photos[n];
+    el.classList.remove('hidden');
+    document.getElementById(`ph-lbl-${n}`).classList.add('hidden');
 }
 
 // 아래 세 함수는 render()를 거치지 않고 현재 화면만 다시 그리므로
@@ -835,7 +884,7 @@ function saveOpinion() {
 function restart() {
     state = { step:'lookup', track:null, info:{}, scores:{}, causes:{}, solutions:{},
               roadmap:{short:[],mid:[],long:[],_built:false}, opinion:'', grade:null, saved:false,
-              selfRef:null, selfData:null, selfScores:null };
+              selfRef:null, selfData:null, selfScores:null, photos:{} };
     selfCache = null;  // 다음 기업 진단 시 최신 자가진단 목록을 다시 조회
     clearDraft();
     document.getElementById('hd-company').classList.add('hidden');
@@ -868,17 +917,19 @@ function prev() {
 function drawCharts(prefix, scoresObj) {
     const labels=DATA.areas.map(a=>a.name);
     const data  =DATA.areas.map(a=>scoresObj[a.id]||0);
+    // 리포트 차트는 애니메이션을 끈다. 그리는 도중 이미지로 바꾸면 비어 나온다.
+    const anim  =prefix==='rpt'?{duration:0}:{};
     ['radar','bar'].forEach(t=>{const k=`${prefix}-${t}`;if(charts[k]){charts[k].destroy();delete charts[k];}});
     charts[`${prefix}-radar`]=new Chart(document.getElementById(`${prefix}-radar`),{
         type:'radar',
         data:{labels,datasets:[{data,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,0.08)',pointBackgroundColor:'#16a34a',pointRadius:3}]},
-        options:{scales:{r:{min:0,max:5,ticks:{display:false},grid:{color:'#e5e7eb'}}},plugins:{legend:false}}
+        options:{animation:anim,scales:{r:{min:0,max:5,ticks:{display:false},grid:{color:'#e5e7eb'}}},plugins:{legend:false}}
     });
     const sorted=DATA.areas.map(a=>({name:a.name,s:scoresObj[a.id]||0})).sort((a,b)=>a.s-b.s);
     charts[`${prefix}-bar`]=new Chart(document.getElementById(`${prefix}-bar`),{
         type:'bar',
         data:{labels:sorted.map(d=>d.name),datasets:[{data:sorted.map(d=>d.s),backgroundColor:sorted.map(d=>d.s<3?'#ef4444':'#16a34a'),borderRadius:3}]},
-        options:{indexAxis:'y',scales:{x:{max:5,grid:{color:'#f1f5f9'}}},plugins:{legend:false}}
+        options:{animation:anim,indexAxis:'y',scales:{x:{max:5,grid:{color:'#f1f5f9'}}},plugins:{legend:false}}
     });
 }
 
@@ -931,7 +982,103 @@ function printExpertReport() {
             <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded font-bold whitespace-nowrap">${w.name} ${w.s}점</span>
             <span class="font-bold text-sm">${DATA.solutions[w.id][0]?.name||''}</span>
         </div>`).join('');
-    setTimeout(()=>{drawCharts('rpt',g.scores);window.print();},500);
+
+    document.getElementById('rpt-compare-wrap').innerHTML = compareSection(g);
+    document.getElementById('rpt-causes-wrap').innerHTML  = causesSection();
+    document.getElementById('rpt-photos-wrap').innerHTML  = photosSection();
+
+    // 다이얼로그를 먼저 열어야 캔버스에 크기가 생긴다.
+    // 숨긴 채로 그리면 0x0이 되어 차트가 깨진다.
+    document.getElementById('report-dialog').showModal();
+    setTimeout(()=>{ drawCharts('rpt', g.scores); }, 150);
+}
+
+// 자가진단(사장님)과 전문가 평가의 격차 — 이 사업의 핵심 근거 자료
+function compareSection(g) {
+    if (!state.selfScores) return '';
+    const rows = DATA.areas.map(a => {
+        const self = state.selfScores[a.id];
+        const exp  = g.scores[a.id];
+        if (self == null || exp == null) return '';
+        const gap = exp - self;
+        const cls = gap < 0 ? 'text-red-600' : gap > 0 ? 'text-blue-600' : 'text-gray-400';
+        const txt = gap === 0 ? '일치' : (gap > 0 ? `+${gap}` : `${gap}`);
+        return `<tr class="border-b">
+            <td class="py-2 px-3 text-sm">${a.icon} ${a.name}</td>
+            <td class="py-2 px-3 text-sm text-center">${self}점</td>
+            <td class="py-2 px-3 text-sm text-center font-bold">${exp}점</td>
+            <td class="py-2 px-3 text-sm text-center font-bold ${cls}">${txt}</td>
+        </tr>`;
+    }).join('');
+    if (!rows) return '';
+    return `
+    <div id="rpt-compare" class="mb-6">
+        <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-blue-500 pl-3 mb-3">자가진단 대비 전문가 평가</h3>
+        <table class="w-full border-t-2 border-gray-800">
+            <thead><tr class="bg-gray-50">
+                <th class="text-left py-2 px-3 text-xs font-bold">영역</th>
+                <th class="py-2 px-3 text-xs font-bold">자가진단</th>
+                <th class="py-2 px-3 text-xs font-bold">전문가 평가</th>
+                <th class="py-2 px-3 text-xs font-bold">격차</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        <p class="text-xs text-gray-400 mt-2">※ 격차가 음수인 영역은 기업이 실제보다 높게 인식하고 있는 부분으로, 인식 개선이 함께 필요합니다.</p>
+    </div>`;
+}
+
+function causesSection() {
+    const rows = DATA.areas.map(a => {
+        const c = state.causes[a.id];
+        if (!c || !c.length) return '';
+        return `<div class="border rounded-lg p-3 mb-2 bg-orange-50 border-orange-100">
+            <span class="text-sm font-bold text-gray-800">${a.icon} ${a.name}</span>
+            <span class="text-sm text-orange-800 ml-2">${c.join(' · ')}</span>
+        </div>`;
+    }).join('');
+    if (!rows) return '';
+    return `
+    <div id="rpt-causes" class="mb-6">
+        <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-orange-500 pl-3 mb-3">근본 원인 분석</h3>
+        ${rows}
+    </div>`;
+}
+
+function photosSection() {
+    const labels = {1:'현장 전경', 2:'주요 애로사항'};
+    const imgs = [1,2].filter(n => state.photos[n]).map(n => `
+        <div class="w-[49%]">
+            <p class="text-xs font-bold text-gray-500 mb-1">${labels[n]}</p>
+            <img src="${state.photos[n]}" style="width:100%;border:1px solid #e5e7eb;border-radius:6px;">
+        </div>`).join('');
+    if (!imgs) return '';
+    return `
+    <div id="rpt-photos" class="mt-8">
+        <h3 class="font-bold text-lg text-[#14532d] border-l-4 border-gray-400 pl-3 mb-3">현장 사진</h3>
+        <div class="flex justify-between">${imgs}</div>
+    </div>`;
+}
+
+// 캔버스는 인쇄 시 비어 나오는 경우가 있어 이미지로 바꾼 뒤 인쇄한다.
+function savePDF() {
+    ['rpt-radar','rpt-bar'].forEach(id=>{
+        const c=document.getElementById(id);
+        if(!c||c.style.display==='none')return;
+        const img=new Image();
+        img.src=c.toDataURL('image/png');
+        img.style.width='100%'; img.style.height='100%';
+        c.style.display='none';
+        c.parentNode.appendChild(img);
+    });
+    window.print();
+    setTimeout(()=>{
+        ['rpt-radar','rpt-bar'].forEach(id=>{
+            const c=document.getElementById(id);
+            if(!c)return;
+            c.style.display='';
+            c.parentNode.querySelectorAll('img').forEach(img=>img.remove());
+        });
+    },500);
 }
 
 // 진단자 로그인 통과 후에만 render() 호출 — checkPw() 참조
