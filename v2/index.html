@@ -50,6 +50,17 @@
 
         input:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
 
+        /* 막대는 캔버스가 아닌 HTML로 그린다.
+           캔버스로 그리면 본문과 폰트가 달라지고 두께·간격을 제어하기 어렵다. */
+        .bar-list  { display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        .bar-row   { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+        .bar-row:last-child { margin-bottom: 0; }
+        .bar-name  { width: 62px; flex: none; font-size: 12px; color: #374151; text-align: right; }
+        .bar-track { flex: 1; height: 11px; background: #eef2f6; border-radius: 2px; overflow: hidden; }
+        .bar-fill  { display: block; height: 100%; border-radius: 0 2px 2px 0; }
+        .bar-val   { width: 30px; flex: none; font-size: 12px; font-weight: 700; color: #111827; text-align: right; }
+        .bar-cap   { font-size: 10px; color: #9ca3af; text-align: right; margin-top: 10px; }
+
         dialog#report-dialog {
             border: none; padding: 0; border-radius: 16px;
             width: min(800px, 95vw); max-height: 96vh; height: 96vh;
@@ -121,9 +132,9 @@
                 <h3 style="font-size:11px;font-weight:700;text-align:center;margin-bottom:4px;">역량 균형도</h3>
                 <canvas id="rpt-radar"></canvas>
             </div>
-            <div style="width:49%;border:1px solid #e5e7eb;padding:12px;border-radius:8px;">
-                <h3 style="font-size:11px;font-weight:700;text-align:center;margin-bottom:4px;">영역별 점수</h3>
-                <canvas id="rpt-bar"></canvas>
+            <div style="width:49%;border:1px solid #e5e7eb;padding:12px;border-radius:8px;display:flex;flex-direction:column;">
+                <h3 style="font-size:11px;font-weight:700;text-align:center;margin-bottom:8px;">영역별 점수</h3>
+                <div id="rpt-bar" style="flex:1;min-height:0"></div>
             </div>
         </div>
         <div id="rpt-gauge-wrap"></div>
@@ -442,7 +453,7 @@ function renderResult(el) {
         </div>
         <div class="grid grid-cols-2 gap-4 mb-5">
             <div class="border rounded-lg p-3"><canvas id="dash-radar" height="180"></canvas></div>
-            <div class="border rounded-lg p-3"><canvas id="dash-bar" height="180"></canvas></div>
+            <div class="border rounded-lg p-4 flex flex-col justify-center" style="min-height:200px"><div id="dash-bar"></div></div>
         </div>
         <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
             <p class="text-xs font-bold text-blue-500 mb-1">📋 진단 결과 요약</p>
@@ -527,23 +538,6 @@ function prev() {
 }
 
 // ===== 차트 =====
-// 막대에 값을 직접 찍는다. 색만으로 값을 전달하면 적록색약과 흑백 인쇄에서 정보가 사라진다.
-const valueLabels = {
-    id: 'valueLabels',
-    afterDatasetsDraw(chart) {
-        const ctx = chart.ctx;
-        ctx.save();
-        ctx.font = 'bold 11px "Noto Sans KR", sans-serif';
-        ctx.fillStyle = '#374151';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        chart.getDatasetMeta(0).data.forEach((bar, i) => {
-            ctx.fillText(`${chart.data.datasets[0].data[i]}점`, bar.x + 6, bar.y);
-        });
-        ctx.restore();
-    }
-};
-
 // 점수(크기)는 한 색조의 농담으로 표현한다. 흑백 인쇄에서도 농담 차이가 남는다.
 const BAR_RAMP = {1:'#bfdbfe', 2:'#93c5fd', 3:'#60a5fa', 4:'#3b82f6', 5:'#1d4ed8'};
 
@@ -561,15 +555,21 @@ function drawCharts(prefix, scoresObj) {
                 grid:{color:'#e5e7eb'},pointLabels:{font:{size:10}}}},
             plugins:{legend:false}}
     });
-    const sorted=DATA.areas.map(a=>({name:a.name,s:scoresObj[a.id]||0})).sort((a,b)=>a.s-b.s);
-    charts[`${prefix}-bar`]=new Chart(document.getElementById(`${prefix}-bar`),{
-        type:'bar',
-        plugins:[valueLabels],
-        data:{labels:sorted.map(d=>d.name),datasets:[{data:sorted.map(d=>d.s),
-            backgroundColor:sorted.map(d=>BAR_RAMP[d.s]||'#e5e7eb'),borderRadius:3}]},
-        options:{animation:anim,indexAxis:'y',layout:{padding:{right:28}},
-            scales:{x:{max:5,grid:{color:'#f1f5f9'}}},plugins:{legend:false}}
-    });
+    document.getElementById(`${prefix}-bar`).innerHTML = barList(scoresObj);
+}
+
+// 영역별 점수 막대 — 값 라벨을 항상 붙여 색에 의존하지 않게 한다
+function barList(scoresObj) {
+    const sorted = DATA.areas.map(a=>({name:a.name, s:scoresObj[a.id]||0})).sort((a,b)=>a.s-b.s);
+    return `<div class="bar-list">
+        ${sorted.map(d=>`
+        <div class="bar-row">
+            <span class="bar-name">${d.name}</span>
+            <span class="bar-track"><i class="bar-fill" style="width:${d.s/5*100}%;background:${BAR_RAMP[d.s]||'#e5e7eb'}"></i></span>
+            <b class="bar-val">${d.s}점</b>
+        </div>`).join('')}
+        <p class="bar-cap">0~5점 척도</p>
+    </div>`;
 }
 
 function exportSelfResult() {
@@ -693,7 +693,7 @@ function printSelfReport() {
 }
 
 function savePDF() {
-    ['rpt-radar','rpt-bar'].forEach(id=>{
+    ['rpt-radar'].forEach(id=>{
         const c=document.getElementById(id);
         if(!c||c.style.display==='none')return;
         const img=new Image();
@@ -704,7 +704,7 @@ function savePDF() {
     });
     window.print();
     setTimeout(()=>{
-        ['rpt-radar','rpt-bar'].forEach(id=>{
+        ['rpt-radar'].forEach(id=>{
             const c=document.getElementById(id);
             if(!c)return;
             c.style.display='';

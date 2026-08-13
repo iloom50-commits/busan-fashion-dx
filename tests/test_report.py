@@ -74,19 +74,25 @@ with sync_playwright() as pw:
     }""")
     r.check("리포트 다이얼로그 열림", dlg is True, str(dlg))
 
-    cv = page.evaluate("""() => ['rpt-radar','rpt-bar'].map(id => {
-        const c = document.getElementById(id);
-        if (!c) return {id, exists:false};
-        let nb = null;
-        if (c.width > 0 && c.height > 0) {
-            const d = c.getContext('2d').getImageData(0,0,c.width,c.height).data;
-            nb = 0; for (let i=3;i<d.length;i+=4) if (d[i] !== 0) nb++;
-        }
-        return {id, w:c.width, h:c.height, nonblank:nb};
-    })""")
-    for c in cv:
-        r.check(f"{c['id']} 캔버스 크기 > 0", c.get("w", 0) > 0 and c.get("h", 0) > 0, str(c))
-        r.check(f"{c['id']} 실제로 그려짐", (c.get("nonblank") or 0) > 100, str(c))
+    # 레이더만 캔버스다. 막대는 HTML로 그린다.
+    cv = page.evaluate("""() => {
+        const c = document.getElementById('rpt-radar');
+        if (!c || !c.width) return {w:0, h:0, nonblank:0};
+        const d = c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+        let nb = 0; for (let i=3;i<d.length;i+=4) if (d[i] !== 0) nb++;
+        return {w:c.width, h:c.height, nonblank:nb};
+    }""")
+    r.check("레이더 캔버스 크기 > 0", cv["w"] > 0 and cv["h"] > 0, str(cv))
+    r.check("레이더 실제로 그려짐", cv["nonblank"] > 100, str(cv))
+
+    bars = page.evaluate("""() => {
+        const rows = [...document.querySelectorAll('#rpt-bar .bar-row')];
+        return { rows: rows.length,
+                 filled: rows.every(x => (x.querySelector('.bar-fill').style.width || '') !== ''),
+                 labeled: rows.every(x => x.querySelector('.bar-val').innerText.trim().endsWith('점')) };
+    }""")
+    r.check("막대 6행 렌더링", bars["rows"] == 6, str(bars))
+    r.check("막대 길이·값 라벨 정상", bars["filled"] and bars["labeled"], str(bars))
 
     r.check("PDF 저장 버튼 존재", page.locator("#report-dialog >> text=PDF로 저장").count() == 1)
 
@@ -120,7 +126,8 @@ with sync_playwright() as pw:
     r.check("자가진단 없으면 비교 섹션 미표시", page.locator("#rpt-compare").count() == 0)
     r.check("사진 없으면 사진 섹션 미표시", page.locator("#rpt-photos").count() == 0)
     r.check("이 경우에도 차트는 그려짐",
-            page.evaluate("document.getElementById('rpt-radar').width") > 0)
+            page.evaluate("document.getElementById('rpt-radar').width") > 0
+            and page.evaluate("document.querySelectorAll('#rpt-bar .bar-row').length") == 6)
 
     r.check("JS 런타임 에러 없음", len(errs) == 0, str(errs[:3]))
     b.close()

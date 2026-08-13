@@ -72,22 +72,32 @@ with sync_playwright() as pw:
             radar and set(c.lower() for c in radar["colors"]) == {"#2563eb", "#16a34a"},
             str(radar and radar["colors"]))
 
-    print("\n=== 전문가 리포트 · 막대 ===")
+    print("\n=== 전문가 리포트 · 막대 (HTML) ===")
     bar = page.evaluate("""() => {
-        const c = charts['rpt-bar'];
-        if (!c) return null;
-        const bg = c.data.datasets[0].backgroundColor;
+        const box = document.getElementById('rpt-bar');
+        if (!box) return null;
+        const rows = [...box.querySelectorAll('.bar-row')];
         return {
-            colors: bg,
-            uniqueColors: [...new Set(bg)].length,
-            hasRedGreenPair: bg.includes('#ef4444') && bg.includes('#16a34a'),
-            valueLabelPlugin: (c.config.plugins||[]).some(p => p.id === 'valueLabels')
+            rows: rows.length,
+            names: rows.map(x => x.querySelector('.bar-name').innerText.trim()),
+            values: rows.map(x => x.querySelector('.bar-val').innerText.trim()),
+            widths: rows.map(x => x.querySelector('.bar-fill').style.width),
+            colors: rows.map(x => x.querySelector('.bar-fill').style.backgroundColor),
+            hasTrack: rows.every(x => !!x.querySelector('.bar-track')),
+            gap: getComputedStyle(box.querySelector('.bar-row')).marginBottom
         };
     }""")
-    r.check("막대에 값 라벨 플러그인 적용", bar and bar["valueLabelPlugin"], str(bar))
-    r.check("빨강/초록 이분법 제거", bar and not bar["hasRedGreenPair"], str(bar and bar["colors"]))
-    r.check("점수에 따라 농담이 달라짐(sequential)", bar and bar["uniqueColors"] >= 3,
-            str(bar and bar["colors"]))
+    r.check("HTML 막대 6행", bar and bar["rows"] == 6, str(bar and bar["rows"]))
+    r.check("모든 행에 값 라벨", bar and all(v.endswith("점") for v in bar["values"]),
+            str(bar and bar["values"]))
+    r.check("점수에 비례한 막대 길이",
+            bar and bar["widths"][0] == "20%" and bar["widths"][-1] == "80%",
+            str(bar and bar["widths"]))
+    r.check("막대마다 배경 트랙", bar and bar["hasTrack"])
+    r.check("점수에 따라 농담이 달라짐(sequential)",
+            bar and len(set(bar["colors"])) >= 3, str(bar and bar["colors"]))
+    r.check("막대 사이 간격 있음", bar and bar["gap"] not in ("", "0px"), str(bar and bar["gap"]))
+    r.check("오름차순 정렬", bar and bar["names"][0] == "공정관리", str(bar and bar["names"]))
 
     print("\n=== 취약 표시 · 등급 게이지 ===")
     body = page.inner_text("#report-dialog")
@@ -121,17 +131,17 @@ with sync_playwright() as pw:
     page.wait_for_timeout(1200)
 
     sbar = page.evaluate("""() => {
-        const c = charts['rpt-bar'];
-        const bg = c.data.datasets[0].backgroundColor;
+        const rows = [...document.querySelectorAll('#rpt-bar .bar-row')];
         return {
-            hasRedGreenPair: bg.includes('#ef4444') && bg.includes('#3b82f6'),
-            uniqueColors: [...new Set(bg)].length,
-            valueLabelPlugin: (c.config.plugins||[]).some(p => p.id === 'valueLabels'),
+            rows: rows.length,
+            values: rows.map(x => x.querySelector('.bar-val').innerText.trim()),
+            colors: rows.map(x => x.querySelector('.bar-fill').style.backgroundColor),
             radarTicks: charts['rpt-radar'].options.scales.r.ticks.display !== false
         };
     }""")
-    r.check("자가진단 막대에 값 라벨", sbar["valueLabelPlugin"], str(sbar))
-    r.check("자가진단 빨강/파랑 이분법 제거", not sbar["hasRedGreenPair"], str(sbar))
+    r.check("자가진단 HTML 막대 6행", sbar["rows"] == 6, str(sbar["rows"]))
+    r.check("자가진단 막대에 값 라벨", all(v.endswith("점") for v in sbar["values"]), str(sbar["values"]))
+    r.check("자가진단도 sequential 색", len(set(sbar["colors"])) >= 2, str(sbar["colors"]))
     r.check("자가진단 레이더 눈금 표시", sbar["radarTicks"], str(sbar))
     r.check("자가진단 등급 게이지", page.locator("#rpt-gauge").count() == 1)
 
