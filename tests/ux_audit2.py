@@ -5,7 +5,7 @@
 """
 import sys, io, json, time
 from playwright.sync_api import sync_playwright
-from helpers import BASE, PATCH, FAKE_SELF
+from helpers import BASE, PATCH, FAKE_SELF, agree_consent
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -157,6 +157,7 @@ with sync_playwright() as pw:
     page3.goto(f"{BASE}/index.html")
     page3.wait_for_function("typeof render === 'function'")
     page3.evaluate(PATCH, [FAKE_SELF])
+    agree_consent(page3)
     page3.fill("#si-comp", "문구검증"); page3.fill("#si-ceo", "홍길동")
     page3.fill("#si-biznum", "123-45-67890"); page3.fill("#si-phone", "010-1111-2222")
     page3.click("div.seg-card:has-text('5~9명')"); page3.click("div.seg-card:has-text('임가공(수주)')")

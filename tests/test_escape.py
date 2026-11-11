@@ -8,7 +8,7 @@ UX 검증 1회차(D6 입력 경계값)에서 발견: 기업명에 넣은 <b>·<i
 """
 import sys, io
 from playwright.sync_api import sync_playwright
-from helpers import BASE, PATCH, Results
+from helpers import BASE, PATCH, Results, agree_consent
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -54,6 +54,7 @@ with sync_playwright() as pw:
     page.wait_for_function("typeof firebase !== 'undefined' && typeof render === 'function'")
     page.evaluate(PATCH, [FAKE])
 
+    agree_consent(page)
     page.fill("#si-comp", EVIL)
     page.fill("#si-ceo", ATTR)
     page.fill("#si-biznum", "123-45-67890")

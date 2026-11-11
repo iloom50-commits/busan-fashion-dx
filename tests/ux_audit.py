@@ -7,6 +7,7 @@
 """
 import sys, io, json
 from playwright.sync_api import sync_playwright
+from helpers import agree_consent
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 LIVE = "https://dx-diagnostic-tool.vercel.app"
@@ -162,6 +163,7 @@ with sync_playwright() as pw:
     page.evaluate(BLOCK)
 
     EVIL = '<b>굵게</b> & "따옴표" <script>x</script> 아주긴이름' + '가' * 60
+    agree_consent(page)
     page.fill("#si-comp", EVIL)
     page.fill("#si-ceo", "홍길동<img src=x onerror=alert(1)>")
     page.fill("#si-biznum", "123-45-67890")

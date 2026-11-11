@@ -205,7 +205,10 @@ async function saveDiagnosis() {
             gradeLv: state.grade.lv,
             gradeTxt: state.grade.txt,
             totalScore: Object.values(state.grade.scores).reduce((a,b)=>a+b,0),
-            scores: state.grade.scores
+            scores: state.grade.scores,
+            // 개인정보 동의 근거. 동의해야만 이 단계에 올 수 있다.
+            consentAgreed: state.consent === 'agree',
+            consentAt: state.consentAt
         });
         if (statusEl) statusEl.innerHTML = '<span class="text-green-600 text-xs font-bold">✓ 결과가 부산테크노파크에 전송되었습니다</span>';
     } catch(e) {
@@ -293,16 +296,19 @@ const DATA = {
 };
 
 const STEPS = [
+    { s:'consent',   label:'개인정보동의' },
     { s:'self-info', label:'기업정보' },
     { s:0,           label:'유형선택' },
     { s:'self-diag', label:'자가진단' },
     { s:'result',    label:'결과' }
 ];
 
-let state = {
-    step:'self-info', track:null,
-    info:{}, selfScores:{}, grade:null, saved:false
-};
+// consent: null(미선택) | 'agree' | 'disagree'. consentAt: 동의를 고른 시각(ISO)
+function newState() {
+    return { step:'consent', consent:null, consentAt:null, track:null,
+             info:{}, selfScores:{}, grade:null, saved:false };
+}
+let state = newState();
 let charts = {};
 
 function updateStepper() {
@@ -319,10 +325,52 @@ function render() {
     const el = document.getElementById('wiz');
     el.className = 'fade-in w-full';
     void el.offsetWidth;
-    if      (state.step === 'self-info') renderSelfInfo(el);
+    if      (state.step === 'consent')   renderConsent(el);
+    else if (state.step === 'self-info') renderSelfInfo(el);
     else if (state.step === 0)           renderTrack(el);
     else if (state.step === 'self-diag') renderSelfDiag(el);
     else if (state.step === 'result')    renderResult(el);
+}
+
+// 부산테크노파크 「개인정보 수집·이용 / 제공 동의서」(개인정보동의.hwp) 원문 그대로.
+// 기관 양식이므로 문구를 바꾸지 않는다. 종이 양식의 날짜·성명·(인) 칸은
+// 선택 시각(consentAt) 저장으로 대신한다.
+function renderConsent(el) {
+    const c = state.consent;
+    const item = (title, body) => `
+        <div>
+            <p class="text-xs font-bold text-gray-700 mb-1">[${title}]</p>
+            <div class="text-sm text-gray-600 leading-relaxed pl-3">${body}</div>
+        </div>`;
+    el.innerHTML = `
+    <div class="q-header">
+        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">STEP 1</div>
+        <h2 class="text-xl font-bold">개인정보 수집·이용 / 제공 동의서</h2>
+        <p class="text-sm text-gray-400 mt-1">자가진단을 시작하기 전에 아래 내용을 확인해주세요</p>
+    </div>
+    <div class="p-6 space-y-4">
+        <p class="text-sm text-gray-700 leading-relaxed">(재)부산테크노파크는「2026년 부산섬유패션연구개발사업」의 운영을 위해 아래와 같은 개인정보를 수집하고 있습니다.</p>
+        <p class="text-xs text-gray-500">《관련 법령 개인정보 보호법 제15조, 제17조, 제24조》</p>
+        <div class="border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50">
+            <p class="text-sm font-bold text-gray-800">▣ 개인정보 수집 및 이용에 관한 사항</p>
+            ${item('개인정보를 제공받는 자', '(재)부산테크노파크「2026년 부산섬유패션연구개발사업」담당 부서(신발패션진흥단 섬유패션센터) 등')}
+            ${item('개인정보의 수집· 이용 목적', '「2026년 부산섬유패션연구개발사업」사업 신청 자격 검토 등의 원활한 사업 수행<br>(재)부산테크노파크 지원사업 안내 및 자료발송 등 사업홍보')}
+            ${item('수집 또는 이용하려는 개인정보의 항목', '기본정보 : 기업정보(회사명, 대표자명, 주소, 전화번호, 사업자등록번호), 신청자 정보(성명, 소속/지위, 휴대폰, 전화, 팩스, e-mail)')}
+            ${item('개인정보의 보유 및 이용기간', '신청일로부터 이용목적 달성 시 까지')}
+            ${item('개인정보 수집 동의 거부의 권리, 불이익 고지', '신청자는 개인정보 수집 동의에 거부할 권리가 있습니다. 다만 개인정보 수집을 거부할 경우「2026년 부산섬유패션연구개발사업」신청 자격 검토 등의 사업 운영이 불가능하므로 (재)부산테크노파크는 이 사업에 참여 접수를 거부할 수 있습니다.')}
+        </div>
+        <p class="text-sm font-bold text-gray-800 leading-relaxed">본인은 (재)부산테크노파크가 사업참여 목적으로 본인의 개인정보를 수집·이용 및 제공하는 것에 동의합니다.</p>
+        <div class="grid grid-cols-2 gap-3">
+            <div id="consent-agree" onclick="selConsent('agree')" class="seg-card ${c==='agree'?'selected':''}">
+                <div class="seg-label">동의함</div></div>
+            <div id="consent-disagree" onclick="selConsent('disagree')" class="seg-card ${c==='disagree'?'selected':''}">
+                <div class="seg-label">동의하지 않음</div></div>
+        </div>
+        ${c==='disagree' ? `<p class="text-xs text-red-500">개인정보 수집·이용에 동의하지 않으시면 자가진단에 참여하실 수 없습니다.</p>` : ''}
+    </div>
+    <div class="px-6 py-4 border-t flex justify-end">
+        <button onclick="saveConsent()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl font-bold text-sm">다음 →</button>
+    </div>`;
 }
 
 function renderSelfInfo(el) {
@@ -334,7 +382,7 @@ function renderSelfInfo(el) {
     };
     el.innerHTML = `
     <div class="q-header">
-        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">STEP 1</div>
+        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">STEP 2</div>
         <h2 class="text-xl font-bold">기업 정보 입력</h2>
         <p class="text-sm text-gray-400 mt-1">간단히 입력해주세요 (약 1분)</p>
     </div>
@@ -374,7 +422,8 @@ function renderSelfInfo(el) {
             </div>
         </div>
     </div>
-    <div class="px-6 py-4 border-t flex justify-end">
+    <div class="px-6 py-4 border-t flex justify-between items-center">
+        <button onclick="prev()" class="text-gray-400 text-sm">← 이전</button>
         <button onclick="saveSelfInfo()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl font-bold text-sm">다음 →</button>
     </div>`;
 }
@@ -384,7 +433,7 @@ function renderTrack(el) {
     const sug = bt==='임가공(수주)'?'B':bt==='자체 브랜드'?'A':bt==='복합 운영'?'C':null;
     el.innerHTML = `
     <div class="q-header text-center">
-        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2">STEP 2</div>
+        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2">STEP 3</div>
         <h2 class="text-2xl font-bold text-gray-800">기업 유형을 선택해주세요</h2>
         <p class="text-gray-400 text-sm mt-1">유형에 따라 진단 문항이 맞춤 설정됩니다</p>
         ${sug?`<div class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-bold mt-3">💡 Track ${sug} 권장</div>`:''}
@@ -408,7 +457,7 @@ function renderTrack(el) {
 function renderSelfDiag(el) {
     el.innerHTML = `
     <div class="q-header">
-        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">STEP 3</div>
+        <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">STEP 4</div>
         <h2 class="text-xl font-bold">6개 영역 자가진단</h2>
         <p class="text-sm text-gray-400 mt-1">각 영역에서 현재 귀사 상황에 가장 가까운 단계를 선택해주세요</p>
     </div>
@@ -484,8 +533,28 @@ function renderResult(el) {
 }
 
 // ===== 액션 =====
-function selInfo(key, val) {
+function selConsent(v) {
+    state.consent = v;
+    state.consentAt = v === 'agree' ? new Date().toISOString() : null;
+    renderConsent(document.getElementById('wiz'));
+}
+
+function saveConsent() {
+    if (!state.consent) { alert('개인정보 수집·이용 동의 여부를 선택해주세요.'); return; }
+    if (state.consent !== 'agree') {
+        alert('개인정보 수집·이용에 동의하지 않으시면 자가진단에 참여하실 수 없습니다.');
+        return;
+    }
+    state.step = 'self-info'; render();
+}
+
+// 입력 중인 기업정보를 state에 옮긴다. 다시 그리거나 이전으로 갈 때 입력값이 지워지지 않게 한다.
+function keepInfoInputs() {
     ['si-comp','si-ceo','si-biznum','si-phone','si-email'].forEach(id=>{const e=document.getElementById(id);if(e)state.info[id.replace('si-','')]=e.value;});
+}
+
+function selInfo(key, val) {
+    keepInfoInputs();
     state.info[key] = val;
     renderSelfInfo(document.getElementById('wiz'));
 }
@@ -531,15 +600,16 @@ function setTrack(t) {
 }
 
 function restart() {
-    state = { step:'self-info', track:null, info:{}, selfScores:{}, grade:null, saved:false };
+    state = newState();
     document.getElementById('hd-company').classList.add('hidden');
     document.getElementById('hd-track').classList.add('hidden');
     render();
 }
 
 function prev() {
-    if     (state.step==='self-info') return;
-    else if(state.step===0)           state.step='self-info';
+    if     (state.step==='consent')   return;
+    else if(state.step==='self-info') { keepInfoInputs(); state.step='consent'; }
+    else if(state.step===0)          state.step='self-info';
     else if(state.step==='self-diag') state.step=0;
     else if(state.step==='result')    state.step='self-diag';
     render();

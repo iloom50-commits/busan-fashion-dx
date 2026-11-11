@@ -41,9 +41,22 @@ def expert_login(page, code="2026", name="검증진단자"):
     page.wait_for_selector("text=자가진단 결과 불러오기")
 
 
+def agree_consent(page):
+    """자가진단 첫 단계(개인정보 동의)에 동의하고 기업정보 화면으로 넘어간다.
+
+    동의 화면이 없는 화면(동의 단계 배포 전의 운영 사이트 등)에서는 아무것도 하지 않는다.
+    """
+    page.wait_for_selector("#consent-agree, #si-comp")
+    if page.query_selector("#consent-agree"):
+        page.click("#consent-agree")
+        page.click("#wiz >> text=다음 →")
+        page.wait_for_selector("#si-comp")
+
+
 def fill_self_form(page, comp="테스트봉제", ceo="홍길동",
                    biz="123-45-67890", phone="010-1111-2222"):
-    """자가진단 기업정보 화면을 채우고 다음으로 넘어간다."""
+    """자가진단 기업정보 화면을 채우고 다음으로 넘어간다. 동의 화면이면 먼저 동의한다."""
+    agree_consent(page)
     page.fill("#si-comp", comp)
     page.fill("#si-ceo", ceo)
     page.fill("#si-biznum", biz)

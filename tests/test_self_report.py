@@ -7,7 +7,7 @@
 """
 import sys, io
 from playwright.sync_api import sync_playwright
-from helpers import BASE, PATCH, FAKE_SELF, Results
+from helpers import BASE, PATCH, FAKE_SELF, Results, agree_consent
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -19,6 +19,7 @@ def run_self(page, picks, comp="자가검증봉제"):
     page.goto(f"{BASE}/index.html")
     page.wait_for_function("typeof firebase !== 'undefined' && typeof render === 'function'")
     page.evaluate(PATCH, [FAKE_SELF])
+    agree_consent(page)
     page.fill("#si-comp", comp)
     page.fill("#si-ceo", "홍길동")
     page.fill("#si-biznum", "123-45-67890")

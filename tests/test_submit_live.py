@@ -9,7 +9,7 @@
 """
 import sys, io
 from playwright.sync_api import sync_playwright
-from helpers import expert_login, Results
+from helpers import expert_login, Results, agree_consent
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -30,6 +30,7 @@ with sync_playwright() as pw:
     print("\n=== 자가진단 실제 제출 ===")
     page.goto(f"{LIVE}/", wait_until="networkidle")
     page.wait_for_selector("#si-biznum")
+    agree_consent(page)
     page.fill("#si-comp", MARK)
     page.fill("#si-ceo", "검증")
     page.fill("#si-biznum", "000-00-00002")

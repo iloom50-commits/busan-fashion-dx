@@ -10,7 +10,7 @@
 """
 import sys, io
 from playwright.sync_api import sync_playwright
-from helpers import BASE, PATCH, FAKE_SELF
+from helpers import BASE, PATCH, FAKE_SELF, agree_consent
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -53,6 +53,7 @@ with sync_playwright() as pw:
 
     # 실제로 6점 진단을 돌려 화면에 무엇이 뜨는지 본다
     page.evaluate(PATCH, [FAKE_SELF])
+    agree_consent(page)
     page.fill("#si-comp", "저점검증"); page.fill("#si-ceo", "홍길동")
     page.fill("#si-biznum", "123-45-67890"); page.fill("#si-phone", "010-1111-2222")
     page.click("div.seg-card:has-text('5~9명')"); page.click("div.seg-card:has-text('임가공(수주)')")

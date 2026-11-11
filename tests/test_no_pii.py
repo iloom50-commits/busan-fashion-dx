@@ -4,7 +4,7 @@
 """
 import sys, io
 from playwright.sync_api import sync_playwright
-from helpers import BASE, PATCH, FAKE_SELF, expert_login, fill_self_form, complete_self_diag, Results
+from helpers import BASE, PATCH, FAKE_SELF, expert_login, fill_self_form, complete_self_diag, agree_consent, Results
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -44,7 +44,7 @@ with sync_playwright() as pw:
     # ===== 입력 화면에 미저장 안내가 있어야 한다 =====
     print("\n=== 미저장 안내 ===")
     page.evaluate("restart()")
-    page.wait_for_selector("#si-comp")
+    agree_consent(page)
     r.check("미저장 안내 문구 표시", "저장되지 않습니다" in page.inner_text("#wiz"))
 
     # ===== 전문가 진단: 저장 payload에 개인정보가 없어야 한다 =====
